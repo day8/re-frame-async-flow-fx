@@ -36,6 +36,7 @@
                                        :source-map    "run/compiled/test.js.map"
                                        :output-dir    "run/compiled/test"
                                        :optimizations :whitespace
+                                       :main          "re-frame_async_flow_fx.test-runner"
                                        :pretty-print  true}}]}
 
   :aliases {"auto"        ["do" "clean," "cljsbuild" "auto" "test,"]

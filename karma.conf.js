@@ -11,7 +11,7 @@ module.exports = function (config) {
         ],
 
         client: {
-            args: ['re_frame_async_flow_fx.test.runner.run']
+            args: ['re_frame_async_flow_fx.test_runner.run']
         },
 
         // the default configuration
