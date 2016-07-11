@@ -6,60 +6,64 @@ Branch | Build Status
 
 
 ### Async Control Flow In re-frame
- 
-When an App boots, it performs a series of tasks to initialise itself.
 
-Invariably, there are dependencies between these tasks, like task1 has to run before task2. Because of 
-these dependencies, "something" has to coordinate how tasks are run. "something" has to 
-provide the control flow.
+This library provides a re-frame effects handler, named `:async-flow`, which wrangles async tasks.
 
-This library provides a re-frame friendly way to manage control flow for a clowder of async tasks. The 
-library is presented in terms of it managing the boot control flow but, actually, 
-it can be used anytime you need to wrangle multiple async tasks. 
+It is particularly useful for managing control flow at app boot time. 
+
 
 ----
 
-### Three Step How To 
+### Quick Overview 
 
-A tutorial follows, but here's the basic steps...    
+To use this effects handler... 
  
-##### 1. Project Dependency
+##### Step 1. Project Dependency
  
-`re-frame-async-flow-fx` is available from clojars. Use the following project dependencies:
+Add the following project dependencies:  
 [![Clojars Project](http://clojars.org/re-frame-async-flow-fx/latest-version.svg)](http://clojars.org/re-frame-async-flow-fx)
 
 
-##### 2. Dispatch :boot
+##### Step 2. Registration
 
-In your app's main entry function, `dispatch`the `:boot` event. This puts 
-some basic data into app-db, and kicks off the necessary async flow.
+In your root namespace, called perhaps `core.cljs`...
 
-```cljs
-(defn ^:export main
-  []
-  (dispatch-sync [:boot])                   ;; boot process is started
-  (reagent/render [this-app.views/main]     ;; mount the main UI view 
-                  (.getElementById js/document "app")))
-```
-
-
-##### 3. Event handler
- 
-In your event handler namespace, called perhaps `events.cljs`...
-
-**3a.** At the top, require: 
+**2a.** At the top:
 ```cljs
 (require 
    ...
    [re-frame-async-flow-fx :as async-flow-fx]
    ...)
 ```
-Although apparently unnecessary because we never use the namespace, we need to require it
-to ensure the effect handler (used in step 3c) is included and registered.  
 
-**3b.** define the async flow required   
 
-You create a data structure describing the flow/coordination required:
+**2b.**  Register the effects handler provided by this library
+ 
+```cljs
+(async-flow-fx/register!)
+```
+
+**2c.** dispatach  :boot 
+
+In your app's main entry function: 
+
+```cljs
+(defn ^:export main
+  []
+  (dispatch-sync [:boot])                 ;; <--- boot process is started
+  (reagent/render 
+    [this-app.views/main]                 ;; mount the main UI view 
+    (.getElementById js/document "app")))
+```
+
+
+##### Step 3. Event handler
+
+In your event handler namespace, probably called `events.cljs`...
+
+**3a.** define the async flow required   
+
+You create a data structure describing the flow/coordination you wish:
 ```
 (def boot-async-flow 
   {:id             :my-flow                                   ;; a unique id
@@ -70,9 +74,13 @@ You create a data structure describing the flow/coordination required:
            {:when :seen-all-of :events #{:success-Z }  :dispatch :done}
            {:when :seen-any-of :events #{:fail-X :fail-Y :fail-Z} :dispatch  (list [:fail-boot] :done)}])
 ```
-More on this data format in the tutorial below.
+More on this format in the tutorial below.
 
-**3c.** finally, write the event handler:
+**3b.** write the event handler for `:boot`:
+
+This event handler will do two things:
+  1. It goes though an initial synchronous series of tasks which get app-db into the right state. 
+  2. It kicks off a multistep asynchronous flow described in data via `boot-async-flow`.
 
 ```
 (def-event-fx                         ;; note the fx
@@ -85,11 +93,8 @@ More on this data format in the tutorial below.
 ```
 
 Look at that last line. This library defines the "effect handler" which interprets `:async-flow`. It will read
- and action the specification supplied in `boot-async-flow`.  
+and action the specification supplied in `boot-async-flow`. 
 
-Just to be clear, this event handler does two things:
-  1. It goes though an initial synchronous series of tasks which get app-db into the right state. 
-  2. It kicks off a multistep asynchronous flow described in data via `boot-async-flow`.
 
 ----
 ### Tutorial
