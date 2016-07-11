@@ -1,3 +1,10 @@
+
+Branch | Build Status
+----------|--------
+`master` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)
+`develop` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop)
+
+
 ### Async Control Flow In re-frame
  
 When an App boots, it performs a series of tasks to initialise itself.
@@ -6,32 +13,26 @@ Invariably, there are dependencies between these tasks, like task1 has to run be
 these dependencies, "something" has to coordinate how tasks are run. "something" has to 
 provide the control flow.
 
-This library provides a re-frame friendly way to manage control flow for a Clowder of async tasks. The 
-library is presented in terms of it managing the boot control flow, but, actually, 
+This library provides a re-frame friendly way to manage control flow for a clowder of async tasks. The 
+library is presented in terms of it managing the boot control flow but, actually, 
 it can be used anytime you need to wrangle multiple async tasks. 
 
-#### Build Status
+----
 
-Branch | Status
-----------|--------
-`master` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)
-`develop` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop)
+### Three Step How To 
 
-
-## High Level How To 
-
-A tutorial follows, but here's an overview...    
+A tutorial follows, but here's the basic steps...    
  
-#### 1. Project Dependency
+##### 1. Project Dependency
  
-`re-frame-async-flow-fx` is available from clojars, so add the following to your project dependencies:
+`re-frame-async-flow-fx` is available from clojars. Use the following project dependencies:
 [![Clojars Project](http://clojars.org/re-frame-async-flow-fx/latest-version.svg)](http://clojars.org/re-frame-async-flow-fx)
 
 
-#### 2. Dispatch :boot
+##### 2. Dispatch :boot
 
-Early in your app's life, probably in your app's main entry function, `dispatch` a `:boot` event. As you'll soon see, 
-this will put some basic data into app-db, kick off the necessary async boot steps.
+In your app's main entry function, `dispatch`the `:boot` event. This puts 
+some basic data into app-db, and kicks off the necessary async flow.
 
 ```cljs
 (defn ^:export main
@@ -41,61 +42,56 @@ this will put some basic data into app-db, kick off the necessary async boot ste
                   (.getElementById js/document "app")))
 ```
 
-`main` is the only place you'd ever use `dispatch-sync`. It's use in `main` is convenient 
-because it will ensure that
-`app-db` is correctly initialised before we start mounting views (which subscribe to state).  We could 
-have used `dispatch` and that would have been fine too, except it would have run "later".  And we 
-would then have to code defensively in our subscriptions and views, guarding against 
-having an uninitialised `app-db`.  Hence the one time use of `dispatch-sync`. 
 
-
-#### 3. Event handler
+##### 3. Event handler
  
-Write and register the event handler for `:boot`. 
+In your event handler namespace, called perhaps `events.cljs`...
 
-In your event handler namespace, called perhaps `events.cljs`, require as follows: 
+**3a.** At the top, require as follows: 
 ```cljs
 (require 
    ...
    [re-frame-async-flow-fx :as async-flow-fx]
    ...)
 ```
+Although apparently unnecessary because we never use the namespace, we need to require it
+to ensure the effect handler (used in step 3c) is registered.  
 
-Next, define the async flow you require via a data structure (described later in the Tutorial).  
+**3b.** define the async flow required   
 
 ```
 (def boot-async-flow 
   {:id             :my-flow                                   ;; a unique id
-   :db-path        [:place :to :store :state :within :db]     ;; flow state goes where? 
+   :db-path        [:path :to :store :flow :state :within :db]   
    :first-dispatch [:do-X]                                    ;; what event kicks things off ?
    :rules [{:when :seen-all-of :events #{:success-X}   :dispatch [:do-Y]}
            {:when :seen-all-of :events #{:success-Y }  :dispatch [:do-Z]}
            {:when :seen-all-of :events #{:success-Z }  :dispatch :done}
            {:when :seen-any-of :events #{:fail-X :fail-Y :fail-Z} :dispatch  (list [:fail-boot] :done)}])
 ```
+More on this format in the tutorial below.
 
-Finally, write the event handler:
+**3c.** write the event handler:
 
 ```
-(register-event-fx                    ;; note the fx
-  :boot                               ;; usage:  (dispatch [:boot])
+(def-event-fx                         ;; note the fx
+  :boot                               ;; usage:  (dispatch [:boot])  See step 2
   (fn [_]
     {:db (-> {}                       ;;  do whatever synchronous work needs to be done
-            task1-fn 
-            task2-fn)          
+            task1-fn                  ;; ?? set state to show "loading" twirly for user??
+            task2-fn)                 ;; ?? do some other simple initialising of state
      :async-flow  boot-async-flow}))  ;; kick off the async process
 ```
 
-That final line is what this library is all about.   It registers an effect for `:async-flow`. 
+Look at that last line. This library defines the "effect handler" which interprets that effect. It reads and actions 
+the specification supplied in `boot-async-flow`.  
 
-So that event handler does two things:
-  1. It goes though an initial sychronous series of tasks which get app-db into the right state. 
-  2. It kicks off a multistep asysnchonous flow. Described in data via `boot-async-flow`.
+Just to be clear, this event handler does two things:
+  1. It goes though an initial synchronous series of tasks which get app-db into the right state. 
+  2. It kicks off a multistep asynchronous flow. Described in data via `boot-async-flow`.
 
-
-## Tutorial
-
-
+----
+### Tutorial
 
 #### Problem Definition
 
@@ -117,8 +113,8 @@ ordering how they are called.
 
 Within a re-frame context, we'd have this:   
 ```
-(register-handler
-  :initialise
+(def-event
+  :boot
   (fn [db]
     (-> {} 
         task1-fn 
@@ -126,7 +122,7 @@ Within a re-frame context, we'd have this:
         task3-fn)))
 ```
 
-and in our `main` function we'd `(dispatch [:initialise])`
+and in our `main` function we'd `(dispatch [:boot])`
 
 
 #### Time
@@ -203,6 +199,7 @@ To put that another way: we do not want the logic implemented in a way that woul
 require a programmer to look in multiple places  to  reconstruct 
 a mental model of the overall control flow.
  
+---
 
 ## The Solution
 
@@ -309,6 +306,13 @@ Further Notes:
 
 ### The Code
 
+
+Using `dispatch-sync` is convenient because it ensures that
+`app-db` is correctly initialised before we start mounting views (which subscribe to state).  Using   
+`dispatch` would work too, except it runs the handler "later".  So, we'd have to then code 
+defensively in our subscriptions and views, guarding against having an uninitialised `app-db`. 
+
+
 **First** create the full `boot-flow` spec.   Above, I gave just the `:rules` part of the spec. 
 
 ```
@@ -329,7 +333,7 @@ Further Notes:
 ```
 (register-event-fx
   :initialise
-  (fn [context]
+  (fn [_]
     {:db (-> {} task1-fn task2-fn)       ;;  do whatever synchronous work needs to be done
      :async-flow  boot-async-flow}))           ;; kick off the async process
 ```
