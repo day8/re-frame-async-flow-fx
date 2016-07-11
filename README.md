@@ -47,7 +47,7 @@ some basic data into app-db, and kicks off the necessary async flow.
  
 In your event handler namespace, called perhaps `events.cljs`...
 
-**3a.** At the top, require as follows: 
+**3a.** At the top, require: 
 ```cljs
 (require 
    ...
@@ -55,10 +55,11 @@ In your event handler namespace, called perhaps `events.cljs`...
    ...)
 ```
 Although apparently unnecessary because we never use the namespace, we need to require it
-to ensure the effect handler (used in step 3c) is registered.  
+to ensure the effect handler (used in step 3c) is included and registered.  
 
 **3b.** define the async flow required   
 
+You create a data structure describing the flow/coordination required:
 ```
 (def boot-async-flow 
   {:id             :my-flow                                   ;; a unique id
@@ -69,9 +70,9 @@ to ensure the effect handler (used in step 3c) is registered.
            {:when :seen-all-of :events #{:success-Z }  :dispatch :done}
            {:when :seen-any-of :events #{:fail-X :fail-Y :fail-Z} :dispatch  (list [:fail-boot] :done)}])
 ```
-More on this format in the tutorial below.
+More on this data format in the tutorial below.
 
-**3c.** write the event handler:
+**3c.** finally, write the event handler:
 
 ```
 (def-event-fx                         ;; note the fx
@@ -83,12 +84,12 @@ More on this format in the tutorial below.
      :async-flow  boot-async-flow}))  ;; kick off the async process
 ```
 
-Look at that last line. This library defines the "effect handler" which interprets that effect. It reads and actions 
-the specification supplied in `boot-async-flow`.  
+Look at that last line. This library defines the "effect handler" which interprets `:async-flow`. It will read
+ and action the specification supplied in `boot-async-flow`.  
 
 Just to be clear, this event handler does two things:
   1. It goes though an initial synchronous series of tasks which get app-db into the right state. 
-  2. It kicks off a multistep asynchronous flow. Described in data via `boot-async-flow`.
+  2. It kicks off a multistep asynchronous flow described in data via `boot-async-flow`.
 
 ----
 ### Tutorial
