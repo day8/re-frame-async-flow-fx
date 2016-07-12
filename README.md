@@ -9,18 +9,13 @@ Branch | Build Status
 
 This library provides a re-frame effects handler, named `:async-flow`, which wrangles async tasks.
 
-It is particularly useful for managing control flow at app boot time. 
+It is particularly useful for managing control flow at app boot time.
 
-
-----
-
-### Quick Overview 
-
-To use this effects handler... 
+### Quick Start Guide
  
-##### Step 1. Project Dependency
+##### Step 1. Add Project Dependency
  
-Add the following project dependencies:  
+Add the following project dependency:  
 [![Clojars Project](http://clojars.org/re-frame-async-flow-fx/latest-version.svg)](http://clojars.org/re-frame-async-flow-fx)
 
 
@@ -28,26 +23,26 @@ Add the following project dependencies:
 
 In your root namespace, called perhaps `core.cljs`...
 
-**2a.** At the top:
-```cljs
+**2a.** Up the top:
+```clj
 (require 
    ...
-   [re-frame-async-flow-fx :as async-flow-fx]
+   [re-frame-async-flow-fx :as async-flow]
    ...)
 ```
 
 
-**2b.**  Register the effects handler provided by this library
+**2b.**  Register with re-frame the effects handler provided by this library
  
-```cljs
-(async-flow-fx/register!)
+```clj
+(async-flow/register-fx!)
 ```
 
-**2c.** dispatach  :boot 
+**2c.** dispatch  :boot 
 
 In your app's main entry function: 
 
-```cljs
+```clj
 (defn ^:export main
   []
   (dispatch-sync [:boot])                 ;; <--- boot process is started
@@ -59,13 +54,13 @@ In your app's main entry function:
 
 ##### Step 3. Event handler
 
-In your event handler namespace, probably called `events.cljs`...
+In your event handlers namespace, perhaps called `events.cljs`...
 
 **3a.** define the async flow required   
 
-You create a data structure describing the flow/coordination you wish:
-```
-(def boot-async-flow 
+You create a data structure describing the flow/coordination you require:
+```clj
+(def boot-flow 
   {:id             :my-flow                                   ;; a unique id
    :db-path        [:path :to :store :flow :state :within :db]   
    :first-dispatch [:do-X]                                    ;; what event kicks things off ?
@@ -74,26 +69,28 @@ You create a data structure describing the flow/coordination you wish:
            {:when :seen-all-of :events #{:success-Z }  :dispatch :done}
            {:when :seen-any-of :events #{:fail-X :fail-Y :fail-Z} :dispatch  (list [:fail-boot] :done)}])
 ```
-More on this format in the tutorial below.
-
+This structure says to run tasks X, Y and Z serially, like dominoes. It also says how to handle 
+failure and success.  More on how this all works in the Tutorial below.  It is sufficient for the moment 
+to know that the required flow is described in data. 
+ 
 **3b.** write the event handler for `:boot`:
 
 This event handler will do two things:
-  1. It goes though an initial synchronous series of tasks which get app-db into the right state. 
-  2. It kicks off a multistep asynchronous flow described in data via `boot-async-flow`.
+  1. It goes though an initial synchronous series of tasks which get app-db into the right state
+  2. It kicks off a multistep asynchronous flow
 
-```
-(def-event-fx                         ;; note the fx
-  :boot                               ;; usage:  (dispatch [:boot])  See step 2
+```clj
+(def-event-fx                    ;; note the fx
+  :boot                          ;; usage:  (dispatch [:boot])  See step 2
   (fn [_]
-    {:db (-> {}                       ;;  do whatever synchronous work needs to be done
-            task1-fn                  ;; ?? set state to show "loading" twirly for user??
-            task2-fn)                 ;; ?? do some other simple initialising of state
-     :async-flow  boot-async-flow}))  ;; kick off the async process
+    {:db (-> {}                  ;;  do whatever synchronous work needs to be done
+            task1-fn             ;; ?? set state to show "loading" twirly for user??
+            task2-fn)            ;; ?? do some other simple initialising of state
+     :async-flow  boot-flow}))   ;; kick off the async process
 ```
 
-Look at that last line. This library defines the "effect handler" which interprets `:async-flow`. It will read
-and action the specification supplied in `boot-async-flow`. 
+Look at that last line. This library defines the "effect handler" which implements `:async-flow`. It reads
+and actions the flow specification provided in `boot-flow`. 
 
 
 ----
@@ -105,7 +102,7 @@ When an App boots, it performs a set of tasks to initialise itself.
 
 Invariably, there are dependencies between these tasks, like task1 has to run before task2.
 
-Because of these dependencies, something has to coordinate how tasks are run.  Within the clojure community,
+Because of these dependencies, "something" has to coordinate how tasks are run.  Within the clojure community,
 a library like [Stuart Sierra's Component](https://github.com/stuartsierra/component) or [mount](https://github.com/tolitius/mount)
 is often turned to in these moments, but we won't be 
 doing that here. We'll be using an approach which is more re-frame friendly.
@@ -115,10 +112,8 @@ doing that here. We'll be using an approach which is more re-frame friendly.
 If the tasks are all synchronous, then the coordination can be done in code. 
    
 Each task is a function, and we satisfy the task dependencies by correctly 
-ordering how they are called.
-
-Within a re-frame context, we'd have this:   
-```
+ordering how they are called. In a re-frame context, we'd have this:   
+```clj
 (def-event
   :boot
   (fn [db]
@@ -135,12 +130,11 @@ and in our `main` function we'd `(dispatch [:boot])`
 
 But, of course, it is never that easy because some of the tasks will be asynchronous.  
 
-A booting app will invariably have to 
-coordinate **asynchronous tasks** like  "open a websocket", "establish a database connections", 
-"load from LocalStore",
+A booting app will invariably have to coordinate **asynchronous tasks** like  
+"open a websocket", "establish a database connections", "load from LocalStore",
 "GET configuration from an S3 bucket" and "querying the database for the user profile".
 
-**Coordinating asynchronous tasks means finding ways to represent and manage time***, 
+**Coordinating asynchronous tasks means finding ways to represent and manage time**, 
 and time is a programming menace.
 In Greek mythology,  Cronus was the much feared Titan of Time, believed to
 bring cruelty and tempestuous disorder, which surely makes him the patron saint of asynchronous programming.
@@ -181,20 +175,20 @@ We want our app to boot in the shortest possible amount of time. So any asynchro
 tasks which could be done in parallel, should be done in parallel. 
 
 So the boot process is seldom linear, one task after an another. Instead, it involves  
-dependencies like:  when task task1 has finished, we can start task2, task3 and task4 in 
-parallel.  But task5 can't start until both task2 and task3 has completed successfully. 
-And task6 can start when task3 is done, but we really don't care if it finishes 
+dependencies like:  when task1 has finished, we can start task2, task3 and task4 in 
+parallel.  And task5 can be started only when both task2 and task3 has completed successfully. 
+And task6 can start when task3 alone has completed, but we really don't care if it finishes 
 properly - it is non essential to a working app.
  
-So, we need to coordinate asynchronous timelines, with complex dependencies, while handling failures.  
+So, we need to coordinate asynchronous flows, with complex dependencies, while handling failures.  
 Not easy, but that's why they pay us the big bucks.
 
 #### As Data Please
 
-Because we program in Clojure, we spend time in hammocks lazily re-watching Rich Hickey videos and
+Because we program in Clojure, we spend time in hammocks carefully re-watching Rich Hickey videos and
 meditating on essential truths like "data is the ultimate in late binding".
 
-Our solution should involve "programming with data" and be, at once, all synonyms of easy. 
+So, our solution must involve "programming with data", and be, at once, all synonyms of easy. 
 
 #### In One Place 
 
@@ -245,14 +239,14 @@ When-E1-Then-E2 is the simple case, with more complicated variations like:
   - when **either** events E1 or E2 happens, then dispatch E3
   - when event E1 happens, then dispatch both E2 and E3
   
-We call these "rules". A collection of rules defines a "flow". 
+We call these "rules". A collection of such rules defines a "flow". 
 
 ### Flow As Data
 
-Collectively, a set of these When-E1-then-E2 rules can describe the entire async boot flow of an app.   
+Collectively, a set of When-E1-then-E2 rules can describe the entire async boot flow of an app.   
 
-Here's how we might describe rules in data:
-```
+Here's how that might look in data:
+```clj
 [{:when :seen-all-of :events #{:success-db-connect}   :dispatch (list [:do-query-user] [:do-query-site-prefs])}
  {:when :seen-all-of :events #{:success-user-query :success-site-prefs-query}   :dispatch (list [:success-boot] :done)}
  {:when :seen-any-of :events #{:fail-user-query :fail-site-prefs-query :fail-db-connect} :dispatch  (list [:fail-boot] :done)}
@@ -263,7 +257,7 @@ That's a vector of 4 maps (one per line), where each represents a single rule. T
 line as if it was an English sentence and something like this should emerge: `when we have seen all of events E1 and E2, then dispatch this other event`
 
 The structure of each rule (map) is: 
-```
+```clj
 {:when     X      ;; one of:   :seen-all-of  or :seen-any-off
  :events   Y      ;; a set of one or more event ids
  :dispatch Z}     ;; either a single vector (to dispatch) or a list of vectors (to dispatch). :done is special
@@ -287,7 +281,7 @@ When we have user data (from the user-query), we can start the intercom process.
   
 Further Notes:
 
-1. The 4th rule starts "intercom" once we have completed the user query. But notice that 
+1. The 4th rule starts "Intercom" once we have completed the user query. But notice that 
    nowhere do we wait for a `:success-intercom`.  We want this process started, 
    but it is not essential for the app's function, so we don't wait for it to complete.
     
@@ -299,71 +293,109 @@ Further Notes:
    are named as follows: `:do-*` is for starting tasks. Task completion is either `:success-*`
    or `:fail-*`
 
-4. A dispatch of `:done` means the boot process is completed.  Clean up the coordinator. 
-   It will have some state somewhere. So get rid of that.  And it will be "sniffing events"
+4. A dispatch of `:done` means the boot flow is completed.  Clean up the flow coordinator. 
+   It will have some state somewhere. So get rid of that.  And it will have been "sniffing events", 
+   so stop doing that too.
    
-5. There's nothing in here about the teardown process at the end of the application.  We're only
-   helping the startup process. 
+5. There's nothing in here about the teardown process as the application is closing. Here's we're only
+   helping the boot process. 
 
-6. To start the boot process  `(dispatch [:do-connect-db])` 
+6. There will need to be something that kicks off the whole flow. In the case above, presumably 
+   a `(dispatch [:do-connect-db])` is how it all starts.
 
 7. A word on Retries XXXX
 
+### Full Specification 
 
-### The Code
+XXX detailed description of format.  `spec` definition?
 
-
-Using `dispatch-sync` is convenient because it ensures that
-`app-db` is correctly initialised before we start mounting views (which subscribe to state).  Using   
-`dispatch` would work too, except it runs the handler "later".  So, we'd have to then code 
-defensively in our subscriptions and views, guarding against having an uninitialised `app-db`. 
-
-
-**First** create the full `boot-flow` spec.   Above, I gave just the `:rules` part of the spec. 
-
-```
-(def boot-async-flow 
-  {:id       :my-flow
-   :db-path  [:place :to :store :state :within :db]     ;; the coordinator needs to keep some state. Where?
-   :first-dispatch [:do-db-connection]                  ;; how does the process get kicked off?
-   :rules [{:when :seen-all-of :events #{:success-db-connect}   :dispatch (list [:do-query-user] [:do-query-site-prefs])}
-           {:when :seen-all-of :events #{:success-user-query :success-site-prefs-query}   :dispatch (list [:success-boot] :done)}
-           {:when :seen-any-of :events #{:fail-user-query :fail-site-prefs-query :fail-db-connect} :dispatch  (list [:fail-boot] :done)}
-           {:when :seen-all-of :events #{:success-user-query}   :dispatch [:do-intercom]}])
+```cljs
+{:id             :my-flow                                   ;; a unique id
+ :db-path        [:path :to :store :flow :state :within :db]   
+ :first-dispatch [:do-X]                                    ;; what event kicks things off ?
+ :rules [{:when :seen-all-of :events #{:success-X}   :dispatch [:do-Y]}
+           {:when :seen-all-of :events #{:success-Y }  :dispatch [:do-Z]}
+           {:when :seen-all-of :events #{:success-Z }  :dispatch :done}
+           {:when :seen-any-of :events #{:fail-X :fail-Y :fail-Z} :dispatch  (list [:fail-boot] :done)}]
 ```
 
-**Second**, change the initialisation handler. It should:
-  1. do the synchronous (easy) stuff to get app-db in a good state
-  2. kicking off the async tasks "flow"
+### Under The Covers 
 
-```
-(register-event-fx
-  :initialise
-  (fn [_]
-    {:db (-> {} task1-fn task2-fn)       ;;  do whatever synchronous work needs to be done
-     :async-flow  boot-async-flow}))           ;; kick off the async process
-```
+How exactly does async-flow work? 
 
-That's it.  
-
-The real work is done by the effects handler for `async-flow`.  It takes the flow you provide and makes it all happen. 
-
-### Async-Flow 
-
-This effects handler does the following:
-  1. It creates an event handler to perform the coordination. 
-  2. It registers this event handler using the `id` you supplied in `boot-async-flow` which was `:my-flow`
-  3. It organises that all events mentioned in `boot-async-flow` rules are be "forward" to this event handler, 
+It does the following:
+  1. It creates an event handler to perform the flow.  
+  2. It registers this event handler using the `:id` supplied in `boot-flow` which was `:my-flow`
+  3. It organises that all events mentioned in `boot-flow` rules are be "forward" to this event handler, 
      after they have been handled by their normal handlers.
      So, let's say the event `[:abc]` was part of `boot-flow`. After `[:abc]` was handled by its normal handler
      there would be an additional `(dispatch [:my-flow  [:abc]])`.  In effect the event `[:abc]` is 
      dispatched as a 1st parameter to the coordinating handler registered in step 2. 
-  4. the event handler uses your `boot-flow` spec to do the flow coordination
-  5. At some point, the boot has finished (failed or succeeded) and the event handler from 1 
-     is de-registered, and events sniffing stops.
+  4. the event handler keeps a track of what events it has seen, and what tasks have already 
+     been started. It keep this state at the path nominated in `:db-path`. 
+  5. the event handler uses your `boot-flow` spec and the state it maintains to work out how it should 
+     respond to each arriving event. 
+  6. At some point, the flow finishes (failed or succeeded) and the event handler from 1 
+     is de-registered, and event sniffing is stopped. 
 
 
 Notes
 1.  This pattern is very flexible. It could be modified to handle more complex FSM.
 2.  All the work is done in a normal event handler (created for you).  And it is all organised around events. 
     So we're playing to the  basic features in re-frame.
+    
+
+### A Note About `main`
+
+The quick start guide (above) suggested that your app's `main` might look like this.  
+
+```clj
+(defn ^:export main
+  []
+  (dispatch-sync [:boot])                 ;; <--- boot process is started
+  (reagent/render 
+    [this-app.views/main]                 ;; mount the main UI view 
+    (.getElementById js/document "app")))
+```
+
+Why the use of `dispatch-sync`, rather than `dispatch`?
+ 
+Well, `dispatch-sync` is convenient in this case because it ensures that
+`app-db` is synchronously initialised **before** we start mounting views (which subscribe to state).  Using   
+`dispatch` would work too, except it runs the handler **later**.  So, we'd have to then code 
+defensively in our subscriptions and views, guarding against having an uninitialised `app-db`. 
+
+This case is the only case I know of where `dispatch-sync` should be used over `dispatch`.
+
+
+
+### Design Philosophy
+
+Managing async task flow means managing time, and managing time requires a state machine. You need:
+   - some retained state   (describing where we have got to) 
+   - events which announce that something has happened or not happened (aka triggers)
+   - a set of rules about transitioning state  (a function of existing state, the new trigger) 
+   
+One way or another you'll be implementing a Finite State Machine.
+   
+Redux-saga uses ES6 generator functions to provide the illusion of a  
+synchronous control flow. The "state machine" is encoded directly into the generator function's 
+statements (one after the other, or with if, or with loops). So that's a nice 
+and simple solution for many cases. 
+
+But there are trade-offs. 
+
+First, it does indeed mean encoding the state machine in "code" (and letting the generator function be 
+the state machine). In clojure, we have a preference for "programming in data".  
+
+Second, coding (in javascript) a more complicated state machines with a bunch of error states and 
+cascades will ultimately get messy. Time is like a liquid under pressure and it will force it way 
+ out through the cracks in the abstraction.  History tells us to implement state machines 
+ in a table driven way (data driven way). 
+
+So we choose data.
+
+But it would be fairly easy to create a re-frame version of redux-saga.  In closure 
+we have core.async instead of generator functions. That is left as an exercise for the reader. 
+
+  

@@ -40,4 +40,4 @@
                                        :pretty-print  true}}]}
 
   :aliases {"auto"        ["do" "clean," "cljsbuild" "auto" "test,"]
-            "once"        ["do" "clean," "cljsbuild" "once" "test,"] })
+            "once"        ["do" "clean," "cljsbuild" "once" "test,"]})

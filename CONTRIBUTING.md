@@ -1,37 +1,28 @@
-# Contributing to re-frame
+# Contributing to re-frame-async-flow-fx
 
-:+1::tada: First off, thanks for taking the time to contribute! :tada::+1:
-
-The following is a set of guidelines for contributing to re-frame-async-flow-fx which is hosted on [Github](https://github.com/Day8/re-frame-async-flow-fx).
-These are just guidelines, not rules, use your best judgement and feel free to propose changes to this document in a pull request.
+Thank you for taking the time to contribute!
 
 ## Support questions
 
-**The Github issues are for bug reports and feature requests. Support requests and usage questions should go to the [Clojure Slack channel](http://clojurians.net), the [ClojureScript mailing list](https://groups.google.com/forum/#!forum/clojurescript).**
+The Github issues are for bug reports and feature requests. Support requests and usage 
+questions should go to the re-frame [Clojure Slack channel](http://clojurians.net) or
+the [ClojureScript mailing list](https://groups.google.com/forum/#!forum/clojurescript).
 
-## Creating issues for bugs
-
-Check if the issue has already been reported. If possible provide:
-
-* Version of re-frame being used
-* Minimal reproduction steps
-
-## Creating issues for features
-
-Use your best judgement on what is needed here.
 
 ## Pull requests
 
-**Create pull requests to the develop branch**, work will merged onto master when it is ready to be released.
+**Create pull requests to the develop branch**, work will be merged onto master when it is ready to be released.
 
 ## Running the tests
 
-To run the tests, you must have recent versions of node, npm, Leiningen, and a C++ compiler toolchain installed. If you're on Linux or Mac OS X then you will be fine, if you're on Windows then you need to install Visual Studio Community Edition, and the C++ compiler dependencies.
+To run the tests, you must have recent versions of node, npm, Leiningen, and a C++ compiler toolchain installed. 
+If you're on Linux or Mac OS X then you will be fine, if you're on Windows then you need to install 
+Visual Studio Community Edition, and the C++ compiler dependencies.
 
-```
-lein deps # will run lein-npm and install Karma and other node dependencies. Only needed the first time.
-lein once # or lein auto # to build re-frame-async-flow-fx
-karma start # to run the tests with an auto watcher
+```sh
+lein deps    # runs lein-npm, installs Karma & other node dependencies. Only needed the first time.
+lein once    # or lein auto # to build re-frame-async-flow-fx
+karma start  # to run the tests with an auto watcher
 ```
 
 ## Pull requests for bugs
