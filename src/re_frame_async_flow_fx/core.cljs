@@ -3,11 +3,27 @@
             [clojure.set :as set]))
 
 
+(defn startable-tasks
+  "Return a list of tasks that have not been started and their
+   when fn answers true given its events and those seen."
+  [rules seen-events started-tasks]
+  (->> (remove (comp started-tasks :id) rules)
+       (filterv (fn [task]
+                  (condp = (:when task)
+                    :seen-all-of  (empty? (set/difference (:events task)  seen-events))
+                    :seen-any-of  (seq (set/intersection seen-events (:events task))))))))
+
+
 (defn make-flow-event-handler
   [{:keys [id db-path rules first-dispatch]}]
   (let [all-events  (apply set/union (map :events rules))       ;; all of the events refered to in the spec
         new-state (fn [db seen started]
-                    (assoc-in db db-path {:seen-events seen :started-tasks started}))]
+                    (assoc-in db db-path {:seen-events seen :started-tasks started}))
+
+
+        ;;  rules'  XXX make all :dispatch a list PLUS make :done   [id :done]   then use rules' below
+        ;; 
+        ]
 
     ;; return an event handler which will manage the flow
     ;; This event handler will receive 3 kinds of events
@@ -17,7 +33,7 @@
     ;;
     (fn flow-event-hander
       [{:keys [db]} event-v]
-        (cond = event-v
+        (condp = event-v
               ;; Setup the flow coordinator:
               ;;  1. Initialise the state  (seen-events and started-tasks)
               ;;  2. dispatch the first event, to kick start
@@ -47,11 +63,11 @@
                     forwarded-event-id     (first forwarded-event)
                     {:keys [seen-events started-tasks]} (get-in db db-path)
                     new-seen-events    (conj seen-events forwarded-event-id)
-                    ready-tasks    (startable-tasks rules new-seen-events started-tasks)   <-  XXX definition of startable tasks
+                    ready-tasks    (startable-tasks rules new-seen-events started-tasks)
                     ready-task-ids (->> ready-tasks (map :dispatch) set)
                     new-started-tasks (set/union started-tasks ready-task-ids)]
-                {:db (new-state db new-seen-events new-started-tasks)
-                 :dispatch (map #(conj (:dispatch %) forwarded-event-id) ready-tasks)})))))   <-  this is crap XXX  take into account special marker`:done`
+                {:db       (new-state db new-seen-events new-started-tasks)
+                 :dispatch (concat (map :dispatch ready-tasks))})))))
 
 (defn register-fx!
   []
