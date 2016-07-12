@@ -4,14 +4,14 @@
 
 
 (defn startable-tasks
-  "Return a list of tasks that have not been started and their
-   when fn answers true given its events and those seen."
-  [rules seen-events started-tasks]
+  "Given a set of 'now-seen-events' and a set of already started tasks
+  return the list of tasks which should now be started."
+  [rules now-seen-events started-tasks]
   (->> (remove (comp started-tasks :id) rules)
        (filterv (fn [task]
                   (condp = (:when task)
-                    :seen-all-of  (empty? (set/difference (:events task)  seen-events))
-                    :seen-any-of  (seq (set/intersection seen-events (:events task))))))))
+                    :seen-all-of  (empty? (set/difference (:events task)  now-seen-events))
+                    :seen-any-of  (seq (set/intersection now-seen-events (:events task))))))))
 
 
 (defn make-flow-event-handler
@@ -22,7 +22,7 @@
 
 
         ;;  rules'  XXX make all :dispatch a list PLUS make :done   [id :done]   then use rules' below
-        ;; 
+        ;;
         ]
 
     ;; return an event handler which will manage the flow
@@ -34,6 +34,7 @@
     (fn flow-event-hander
       [{:keys [db]} event-v]
         (condp = event-v
+
               ;; Setup the flow coordinator:
               ;;  1. Initialise the state  (seen-events and started-tasks)
               ;;  2. dispatch the first event, to kick start
@@ -54,9 +55,9 @@
                        :event-forwarder {:unregister id}})
 
               ;;
-              ;; An new event has been forwarded to this handler. What does it mean?
-              ;;  1. work out if this new event means we need to dispatch another
-              ;;  2. remember the new state
+              ;; A new event has been forwarded to this handler. What does it mean?
+              ;;  1. does this new event mean we need to dispatch another
+              ;;  2. remember that this new event has happened
               (let [[event-id forwarded-event] event-v
                     _   (assert (= id event-id))
                     _   (assert (vector? forwarded-event))
