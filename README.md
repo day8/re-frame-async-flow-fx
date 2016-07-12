@@ -1,10 +1,4 @@
 
-Branch | Build Status
-----------|--------
-`master` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)
-`develop` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop)
-
-
 ### Async Control Flow In re-frame
 
 This library provides a re-frame effects handler, named `:async-flow`, which wrangles async tasks.
@@ -13,13 +7,13 @@ It is particularly useful for managing control flow at app boot time.
 
 ### Quick Start Guide
  
-##### Step 1. Add Project Dependency
+#### Step 1. Add Project Dependency
  
 Add the following project dependency:  
 [![Clojars Project](http://clojars.org/re-frame-async-flow-fx/latest-version.svg)](http://clojars.org/re-frame-async-flow-fx)
 
 
-##### Step 2. Registration
+#### Step 2. Registration
 
 In your root namespace, called perhaps `core.cljs`...
 
@@ -52,7 +46,7 @@ In your app's main entry function:
 ```
 
 
-##### Step 3. Event handler
+#### Step 3. Event handler
 
 In your event handlers namespace, perhaps called `events.cljs`...
 
@@ -92,8 +86,15 @@ This event handler will do two things:
 Look at that last line. This library defines the "effect handler" which implements `:async-flow`. It reads
 and actions the flow specification provided in `boot-flow`. 
 
-
 ----
+
+Branch | Build Status
+----------|--------
+`master` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)
+`develop` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop)
+
+
+
 ### Tutorial
 
 #### Problem Definition
@@ -199,7 +200,7 @@ To put that another way: we do not want the logic implemented in a way that woul
 require a programmer to look in multiple places  to  reconstruct 
 a mental model of the overall control flow.
  
----
+
 
 ## The Solution
 
@@ -339,10 +340,10 @@ It does the following:
      is de-registered, and event sniffing is stopped. 
 
 
-Notes
-1.  This pattern is very flexible. It could be modified to handle more complex FSM.
-2.  All the work is done in a normal event handler (created for you).  And it is all organised around events. 
-    So we're playing to the  basic features in re-frame.
+Notes:
+  1.  This pattern is very flexible. It could be modified to handle more complex FSM.
+  2.  All the work is done in a normal event handler (created for you).  And it is all organised around events. 
+      So this solution is based on pure re-frame fundamentals. 
     
 
 ### A Note About `main`
@@ -365,8 +366,7 @@ Well, `dispatch-sync` is convenient in this case because it ensures that
 `dispatch` would work too, except it runs the handler **later**.  So, we'd have to then code 
 defensively in our subscriptions and views, guarding against having an uninitialised `app-db`. 
 
-This case is the only case I know of where `dispatch-sync` should be used over `dispatch`.
-
+This is the only known case where you should use `dispatch-sync` over `dispatch`. 
 
 
 ### Design Philosophy

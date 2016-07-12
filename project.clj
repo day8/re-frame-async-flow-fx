@@ -1,11 +1,11 @@
-(defproject re-frame-async-flow-fx "0.0.1-SNAPSHOT"
+(defproject re-frame-async-flow-fx "0.0.1"
   :description  "A re-frame effects handler for coordinating async control flow. (Which often happens on app startup.)"
   :url          "https://github.com/Day8/re-frame-async-flow-fx.git"
   :license      {:name "MIT"}
   :dependencies [[org.clojure/clojure        "1.8.0"]
                  [org.clojure/clojurescript  "1.9.89"]
                  [reagent                    "0.6.0-rc"]
-                 [re-frame                   "0.8.0-SNAPSHOT"]]
+                 [re-frame                   "0.8.0-alpha1"]]
 
   :profiles {:debug {:debug true}
              :dev   {:dependencies [
