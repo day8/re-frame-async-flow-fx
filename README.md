@@ -1,13 +1,13 @@
-
 ### Async Control Flow In re-frame
 
-This library provides a re-frame effects handler, named `:async-flow`, which wrangles async tasks.
+This library provides a re-frame effects handler, named `:async-flow`, 
+which wrangles async tasks.
 
 It is particularly useful for managing control flow at app boot time.
 
 ### Quick Start Guide
  
-#### Step 1. Add Project Dependency
+#### Step 1. Add Dependency
  
 Add the following project dependency:  
 [![Clojars Project](http://clojars.org/re-frame-async-flow-fx/latest-version.svg)](http://clojars.org/re-frame-async-flow-fx)
@@ -15,9 +15,8 @@ Add the following project dependency:
 
 #### Step 2. Registration
 
-In your root namespace, called perhaps `core.cljs`...
+In your root namespace, called perhaps `core.cljs`, in the `ns`...
 
-**2a.** Up the top:
 ```clj
 (require 
    ...
@@ -25,49 +24,52 @@ In your root namespace, called perhaps `core.cljs`...
    ...)
 ```
 
+Because we never subsequently use this namespace, this can
+appears redundant.  But it will cause the `:async-flow` effect 
+handler to self-register with re-frame, which is important
+to everything that follows.
 
-**2b.**  Register with re-frame the effects handler provided by this library
- 
-```clj
-(async-flow/register-fx!)
-```
 
-**2c.** dispatch  :boot 
+#### Step 3. Initiate Boot
 
-In your app's main entry function: 
+In your app's main entry function, we want to initiate the boot process:
 
 ```clj
 (defn ^:export main
   []
-  (dispatch-sync [:boot])                 ;; <--- boot process is started
+  (dispatch-sync [:boot])            ;; <--- boot process is started
   (reagent/render 
-    [this-app.views/main]                 ;; mount the main UI view 
+    [this-app.views/main]                 
     (.getElementById js/document "app")))
 ```
 
+Why the use of `dispatch-sync`, rather than `dispatch`?
+ 
+Well, `dispatch-sync` is convenient in this case because it ensures that
+`app-db` is synchronously initialised **before** we start mounting views (which subscribe to state).  Using   
+`dispatch` would work too, except it runs the handler **later**.  So, we'd have to then code 
+defensively in our subscriptions and views, guarding against having an uninitialised `app-db`. 
 
-#### Step 3. Event handler
+This is the only known case where you should use `dispatch-sync` over `dispatch`. 
+
+#### Step 4. Event handler
 
 In your event handlers namespace, perhaps called `events.cljs`...
 
-**3a.** define the async flow required   
-
-You create a data structure describing the flow/coordination you require:
+**First**, define the async flow required by creating a data structure:
 ```clj
 (def boot-flow 
-  {:id             :my-flow                                   ;; a unique id
-   :db-path        [:path :to :store :flow :state :within :db]   
-   :first-dispatch [:do-X]                                    ;; what event kicks things off ?
-   :rules [{:when :seen-all-of :events #{:success-X}   :dispatch [:do-Y]}
-           {:when :seen-all-of :events #{:success-Y }  :dispatch [:do-Z]}
-           {:when :seen-all-of :events #{:success-Z }  :dispatch :done}
-           {:when :seen-any-of :events #{:fail-X :fail-Y :fail-Z} :dispatch  (list [:fail-boot] :done)}])
+  {:first-dispatch [:do-X]              ;; what event kicks things off ?
+   :rules [
+     {:when :seen :events :success-X  :dispatch [:do-Y]}
+     {:when :seen :events :success-Y  :dispatch [:do-Z]}
+     {:when :seen :events :success-Z  :dispatch :halt}
+     {:when :seen-any-of :events [:fail-X :fail-Y :fail-Z] :dispatch  (list [:fail-boot] :halt)}])
 ```
-This structure says to run tasks X, Y and Z serially, like dominoes. It also says how to handle 
-failure and success.  More on how this all works in the Tutorial below.  It is sufficient for the moment 
-to know that the required flow is described in data. 
+More on this data structure in the Tutorial below, but for the moment know that the above says to 
+run tasks X, Y and Z serially, like dominoes. It also says how to handle failure and success.
  
-**3b.** write the event handler for `:boot`:
+**Second**, write the event handler for `:boot`:
 
 This event handler will do two things:
   1. It goes though an initial synchronous series of tasks which get app-db into the right state
@@ -84,7 +86,7 @@ This event handler will do two things:
 ```
 
 Look at that last line. This library defines the "effect handler" which implements `:async-flow`. It reads
-and actions the flow specification provided in `boot-flow`. 
+and actions what's provided in `boot-flow`.
 
 ----
 
@@ -93,7 +95,7 @@ Branch | Build Status
 `master` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)
 `develop` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop)
 
-
+---
 
 ### Tutorial
 
@@ -248,10 +250,10 @@ Collectively, a set of When-E1-then-E2 rules can describe the entire async boot 
 
 Here's how that might look in data:
 ```clj
-[{:when :seen-all-of :events #{:success-db-connect}   :dispatch (list [:do-query-user] [:do-query-site-prefs])}
- {:when :seen-all-of :events #{:success-user-query :success-site-prefs-query}   :dispatch (list [:success-boot] :done)}
- {:when :seen-any-of :events #{:fail-user-query :fail-site-prefs-query :fail-db-connect} :dispatch  (list [:fail-boot] :done)}
- {:when :seen-all-of :events #{:success-user-query}   :dispatch [:do-intercom]}]
+[{:when :seen        :events :success-db-connect   :dispatch (list [:do-query-user] [:do-query-site-prefs])}
+ {:when :seen-all-of :events [:success-user-query :success-site-prefs-query]   :dispatch (list [:success-boot] :halt)}
+ {:when :seen-any-of :events [:fail-user-query :fail-site-prefs-query :fail-db-connect] :dispatch  (list [:fail-boot] :halt)}
+ {:when :seen        :events :success-user-query   :dispatch [:do-intercom]}]
 ```
 
 That's a vector of 4 maps (one per line), where each represents a single rule. Try to read each 
@@ -259,9 +261,9 @@ line as if it was an English sentence and something like this should emerge: `wh
 
 The structure of each rule (map) is: 
 ```clj
-{:when     X      ;; one of:   :seen-all-of  or :seen-any-off
- :events   Y      ;; a set of one or more event ids
- :dispatch Z}     ;; either a single vector (to dispatch) or a list of vectors (to dispatch). :done is special
+{:when     X      ;; one of:  :seen, :seen-all-of, :seen-any-off, or a predicate function
+ :events   Y      ;; either a single keyword or a seq of keywords representing event ids
+ :dispatch Z}     ;; either a single vector (to dispatch) or a list of vectors (to dispatch). :halt is special
 ```
 
 We can't issue a database query until we have a database connection, so the 1st rule (above) says:
@@ -270,11 +272,12 @@ We can't issue a database query until we have a database connection, so the 1st 
   
 If both database queries succeed, then we have successfully booted, and the boot process is over. So, the 2nd rule says:
   1. When both success events have been seen (they may arrive in any order),  
-  2. then `(dispatch [:success-queries])` and cleanup because the boot process is `:done`.
+  2. then `(dispatch [:success-queries])` and cleanup because the boot process is `:halt`.
   
-If any task fails, then the boot fails, and the app can't start. So go into a failure mode. And the boot process has done. So the 3rd rules says:
+If any task fails, then the boot fails, and the app can't start. So go into a failure mode. And 
+the boot process has done. So the 3rd rules says:
   1.  If any one of the various tasks fail...
-  2.  then `(dispatch [:fail-boot])` and cleanup because the boot process is `:done`. 
+  2.  then `(dispatch [:fail-boot])` and cleanup because the boot process is `:halt`. 
  
 When we have user data (from the user-query), we can start the intercom process. So the 4th rules days:
   1. When `:success-user-query` is dispatched 
@@ -294,7 +297,7 @@ Further Notes:
    are named as follows: `:do-*` is for starting tasks. Task completion is either `:success-*`
    or `:fail-*`
 
-4. A dispatch of `:done` means the boot flow is completed.  Clean up the flow coordinator. 
+4. The special `:dispatch` value of `:halt` means the boot flow is completed.  Clean up the flow coordinator. 
    It will have some state somewhere. So get rid of that.  And it will have been "sniffing events", 
    so stop doing that too.
    
@@ -306,19 +309,33 @@ Further Notes:
 
 7. A word on Retries XXXX
 
-### Full Specification 
+### The Data Structure 
 
-XXX detailed description of format.  `spec` definition?
+The data structure has the following fields:
 
-```cljs
-{:id             :my-flow                                   ;; a unique id
- :db-path        [:path :to :store :flow :state :within :db]   
- :first-dispatch [:do-X]                                    ;; what event kicks things off ?
- :rules [{:when :seen-all-of :events #{:success-X}   :dispatch [:do-Y]}
-           {:when :seen-all-of :events #{:success-Y }  :dispatch [:do-Z]}
-           {:when :seen-all-of :events #{:success-Z }  :dispatch :done}
-           {:when :seen-any-of :events #{:fail-X :fail-Y :fail-Z} :dispatch  (list [:fail-boot] :done)}]
-```
+  - `:id` - optional - an identifier, probably a namespaced keyword.  
+    It must not clash with the identifier for any event handler (because internally 
+    an event handler is created using this id).  
+    If absent `:async/flow` is used.
+  - `db-path` - optional - the path within `app-db` where the coordination logic should store state. Two pieces
+     of state are stored:  the set of seen events, and the set of started tasks.
+    If absent, then state is not stored in app-db and is instead held in an internal atom. 
+    We prefer to store state in app-db because we like the philosophy of having all the data in the one place, 
+    but it is not essential. 
+  - `first-dispatch` - mandatory - the event which initiates the async flow. This is often 
+    something like the event which will open a websocket or HTTP GET configuration from the server.
+  - `rules` - mandatory - a vector of maps. Each map is a "rule".
+  
+Rules have the following 3 fields:
+
+  - `:when`  one of `:seen`, `:seen-all-of`, `:seen-any-of`
+    `:seen` and `:seen-all-of` are the same.
+  - `:events` can be a single keyword or a seq of keywords, presumably event ids
+  - `:dispatch` can be a single vector representing one thing to dispatch, 
+     or a list of vectors representing multiple events to `dispatch`  
+     The special value `:halt` can be supplied in place of a vector, and it means
+     to teardown the flow. 
+
 
 ### Under The Covers 
 
@@ -345,29 +362,6 @@ Notes:
   2.  All the work is done in a normal event handler (created for you).  And it is all organised around events. 
       So this solution is based on pure re-frame fundamentals. 
     
-
-### A Note About `main`
-
-The quick start guide (above) suggested that your app's `main` might look like this.  
-
-```clj
-(defn ^:export main
-  []
-  (dispatch-sync [:boot])                 ;; <--- boot process is started
-  (reagent/render 
-    [this-app.views/main]                 ;; mount the main UI view 
-    (.getElementById js/document "app")))
-```
-
-Why the use of `dispatch-sync`, rather than `dispatch`?
- 
-Well, `dispatch-sync` is convenient in this case because it ensures that
-`app-db` is synchronously initialised **before** we start mounting views (which subscribe to state).  Using   
-`dispatch` would work too, except it runs the handler **later**.  So, we'd have to then code 
-defensively in our subscriptions and views, guarding against having an uninitialised `app-db`. 
-
-This is the only known case where you should use `dispatch-sync` over `dispatch`. 
-
 
 ### Design Philosophy
 
