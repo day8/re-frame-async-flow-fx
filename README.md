@@ -1,3 +1,5 @@
+> Status:  still under development. Don't use yet.
+
 ## Async Control Flow In re-frame
 
 This library provides a re-frame effects handler, named `:async-flow`, 
@@ -20,12 +22,12 @@ In your root namespace, called perhaps `core.cljs`, in the `ns`...
 ```clj
 (require 
    ...
-   [re-frame-async-flow-fx :as async-flow]
+   [re-frame-async-flow-fx]
    ...)
 ```
 
-Because we never subsequently use this namespace, this can
-appears redundant.  But it will cause the `:async-flow` effect 
+Because we never subsequently use this namespace, it 
+appears redundant.  But the require will cause the `:async-flow` effect 
 handler to self-register with re-frame, which is important
 to everything that follows.
 
@@ -45,7 +47,7 @@ In your app's main entry function, we want to initiate the boot process:
 
 Why the use of `dispatch-sync`, rather than `dispatch`?
  
-Well, `dispatch-sync` is convenient in this case because it ensures that
+Well, `dispatch-sync` is convenient here because it ensures that
 `app-db` is synchronously initialised **before** we start mounting views (which subscribe to state).  Using   
 `dispatch` would work too, except it runs the handler **later**.  So, we'd have to then code 
 defensively in our subscriptions and views, guarding against having an uninitialised `app-db`. 
@@ -54,9 +56,11 @@ This is the only known case where you should use `dispatch-sync` over `dispatch`
 
 ### Step 4. Event handler
 
+Remember that `(dispatch-sync [:boot])` in step 2.  It now time to write the event handler. 
+
 In your event handlers namespace, perhaps called `events.cljs`...
 
-**First**, define the async flow required by creating a data structure:
+**First**, create a data structure which defines the async flow required:
 ```clj
 (def boot-flow 
   {:first-dispatch [:do-X]              ;; what event kicks things off ?
@@ -66,8 +70,9 @@ In your event handlers namespace, perhaps called `events.cljs`...
      {:when :seen :events :success-Z  :dispatch :halt}
      {:when :seen-any-of :events [:fail-X :fail-Y :fail-Z] :dispatch  (list [:fail-boot] :halt)}])
 ```
-You can almost read the `rules` as English sentences to understand what's being specified. But more
-on this data structure in the Tutorial (below).
+You can almost read the `rules` as English sentences to understand what's being specified. Suffice 
+it to say that tasks X, Y and Z will be run serially like dominoes. Much more complicated 
+scenarios are possible.  But more on this data structure in the Tutorial (below).
  
 **Second**, write the event handler for `:boot`:
 
@@ -78,7 +83,7 @@ This event handler will do two things:
 ```clj
 (def-event-fx                    ;; note the fx
   :boot                          ;; usage:  (dispatch [:boot])  See step 2
-  (fn [_]
+  (fn [_ _]
     {:db (-> {}                  ;;  do whatever synchronous work needs to be done
             task1-fn             ;; ?? set state to show "loading" twirly for user??
             task2-fn)            ;; ?? do some other simple initialising of state
@@ -208,7 +213,7 @@ a mental model of the overall control flow.
 
 re-frame has events. That's how we roll.
 
-A re-frame application can't step forward in time, unless an event happens; unless something
+A re-frame application can't step forward in time unless an event happens; unless something
 does a `dispatch`.  Events will be the organising principle in our solution exactly
 because events are an organising principle within re-frame itself.
 
@@ -384,12 +389,12 @@ the state machine). In clojure, we have a preference for "programming in data".
 
 Second, coding (in javascript) a more complicated state machines with a bunch of failure states and 
 cascades will ultimately get messy. Time is like a liquid under pressure and it will force it way 
- out through the cracks in the abstraction.  History tells us to implement state machines 
- in a table driven way (data driven way). 
+out through the cracks in the abstraction.  History tells us to implement state machines 
+in a table driven way (data driven way). 
 
 So we choose data.
 
-But it would be quite possible to create a re-frame version of redux-saga.  In closure 
-we have core.async instead of generator functions. That is left as an exercise for the enthusiastic reader. 
+But it would be quite possible to create a re-frame version of redux-saga.  In ClosureScript
+we have core.async instead of generator functions. That is left as an exercise for the enthusiastic reader.
 
   

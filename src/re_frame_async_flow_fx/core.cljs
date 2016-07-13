@@ -11,7 +11,7 @@
 
 (defn any-events-seen?
   [required-events seen-events]
-  (seq (set/intersection seen-events required-events)))
+  (some? (seq (set/intersection seen-events required-events))))
 
 
 (defn newly-startable-tasks
@@ -45,7 +45,7 @@
 
 (defn make-flow-event-handler
   [{:keys [id db-path rules first-dispatch]}]
-  (let [id          (or id default-id)
+  (let [id  (or id default-id)
 
         ;; Subject to db-path, state is either stored in app-db or in a local atom
         ;; Two pieces of state are maintained:

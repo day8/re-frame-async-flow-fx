@@ -5,7 +5,7 @@
   :dependencies [[org.clojure/clojure        "1.8.0"]
                  [org.clojure/clojurescript  "1.9.89"]
                  [reagent                    "0.6.0-rc"]
-                 [re-frame                   "0.8.0-alpha1"]]
+                 [re-frame                   "0.8.0-SNAPSHOT"]]
 
   :profiles {:debug {:debug true}
              :dev   {:dependencies [[karma-reporter     "0.3.0"]
