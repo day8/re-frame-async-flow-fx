@@ -4,7 +4,7 @@ Thank you for taking the time to contribute!
 
 ## Support questions
 
-The Github issues are for bug reports and feature requests. Support requests and usage 
+The Github issues are for bug reports and feature requests. Support requests and usage
 questions should go to the re-frame [Clojure Slack channel](http://clojurians.net) or
 the [ClojureScript mailing list](https://groups.google.com/forum/#!forum/clojurescript).
 
@@ -15,14 +15,23 @@ the [ClojureScript mailing list](https://groups.google.com/forum/#!forum/clojure
 
 ## Running the tests
 
-To run the tests, you must have recent versions of node, npm, Leiningen, and a C++ compiler toolchain installed. 
-If you're on Linux or Mac OS X then you will be fine, if you're on Windows then you need to install 
+####Browser/HTML
+```sh
+lein test-once  # builds re-frame-async-flow-fx tests & opens browser on test/test.html
+                # or lein test-auto # then open a browser on test/test.html
+                # and refresh browser to rerun tests after each auto compile.
+```
+
+####Karma
+
+To run the tests, you must have recent versions of node, npm, Leiningen, and a C++ compiler toolchain installed.
+If you're on Linux or Mac OS X then you will be fine, if you're on Windows then you need to install
 Visual Studio Community Edition, and the C++ compiler dependencies.
 
 ```sh
-lein deps    # runs lein-npm, installs Karma & other node dependencies. Only needed the first time.
-lein once    # or lein auto # to build re-frame-async-flow-fx
-karma start  # to run the tests with an auto watcher
+lein deps       # runs lein-npm, installs Karma & other node dependencies. Only needed the first time.
+lein karma-once # to build re-frame-async-flow-fx tests
+karma start     # to run the tests with an auto watcher
 ```
 
 ## Pull requests for bugs
