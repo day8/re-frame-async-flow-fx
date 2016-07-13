@@ -39,8 +39,8 @@
                  :disptach  (cond
                               (vector? dispatch)  (list dispatch)
                               (list? dispatch)    (map (fn [d] (if (= d :halt) halt-event d) dispatch))
-                              (= :halt dispatch)  (list [id :halt])
-                              :else  (js/console.error "aync-flow: dispatch not valid: " dispatch))})))))
+                              (= :halt dispatch)  (list halt-event)
+                              :else  (js/console.error "aync-flow: dispatch value not valid: " dispatch))})))))
 
 
 (defn make-flow-event-handler
@@ -89,7 +89,7 @@
               ;;  1. remove this event handler
               ;;  2. remove state
               ;;  3. stop the events forwarder
-              :done {:db (dissoc db db-path)
+              :halt {:db (dissoc db db-path)
                      :event-forwarder {:unregister id}
                      :deregister-event-handler id})          ;; XXX write this effects handler
 
