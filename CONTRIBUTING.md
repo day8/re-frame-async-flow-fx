@@ -15,14 +15,14 @@ the [ClojureScript mailing list](https://groups.google.com/forum/#!forum/clojure
 
 ## Running the tests
 
-####Browser/HTML
+#### Via Browser/HTML
 ```sh
 lein test-once  # builds re-frame-async-flow-fx tests & opens browser on test/test.html
                 # or lein test-auto # then open a browser on test/test.html
                 # and refresh browser to rerun tests after each auto compile.
 ```
 
-####Karma
+#### Via Karma
 
 To run the tests, you must have recent versions of node, npm, Leiningen, and a C++ compiler toolchain installed.
 If you're on Linux or Mac OS X then you will be fine, if you're on Windows then you need to install

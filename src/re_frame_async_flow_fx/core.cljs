@@ -13,16 +13,34 @@
   [required-events seen-events]
   (seq (set/intersection seen-events required-events)))
 
-(def when->fn {:all-events-seen all-events-seen? :any-events-seen any-events-seen?})
-
 
 (defn newly-startable-tasks
-  "Given the accumulated set of seen events and the set of already started tasks,
+  "Given the accumulated set of seen events and the set of tasks already started,
   return the list of tasks which should now be started.
-  In effect, give that the list of events seen has changed, what is the consequence."
+  In effect, given the list of events seen has changed, what is the consequence."
   [rules now-seen-events started-tasks]
   (->> (remove (comp started-tasks :id) rules)
-       (filterv (fn [task] ((:when task) (:events task) now-seen-events)))
+       (filterv (fn [task] ((:when task) (:events task) now-seen-events)))))
+
+
+
+(defn massage-rules
+  "Massage the supplied rules as follows:
+    - replace `:when` keyword value with a function which implements the predicate
+    - ensure that `:dispatch` is always a list and turn  `:done` into the right event
+    - ensure that :events is a set"
+  [id rules]
+  (let [halt-event  [id :halt]
+        when->fn {:seen all-events-seen? :all-events-seen all-events-seen? :any-events-seen any-events-seen?}]
+    (->> rules
+         (map (fn [{:keys [when events dispatch]}]
+                {:when      #(when->fn when)
+                 :events    (if (seq events) (set events) #{events})
+                 :disptach  (cond
+                              (vector? dispatch)  (list dispatch)
+                              (list? dispatch)    (map (fn [d] (if (= d :halt) halt-event d) dispatch))
+                              (= :halt dispatch)  (list [id :halt])
+                              :else  (js/console.error "aync-flow: dispatch not valid: " dispatch))})))))
 
 
 (defn make-flow-event-handler
@@ -44,18 +62,8 @@
                       (fn [db] (get-in db db-path))
                       (fn [_]  @local-store))
 
-        ;; Tweak supplied rules:
-        ;; - replace `:when` keyword value with a function
-        ;; - ensure that `:dispatch` is always a list and turn  `:done` into the right thing
-        ;; - ensure that :events is a set
-        rules   (-> rules
-                    (map (fn [rule]
-                           (update rule :when #(or (when->fn %1) %1))))
-                    (map (fn [rule]
-                           (update rule :dispatch (cond )))))
-
-        all-events  (apply set/union (map :events rules))       ;; all of the events refered to in the spec
-        ]
+        rules  (massage-rules id rules)
+        all-events  (apply set/union (map :events rules))]       ;; all of the events refered to in the rules
 
     ;; return an event handler which will manage the flow
     ;; This event handler will receive 3 kinds of events
@@ -75,7 +83,7 @@
                       :dispatch first-dispatch
                       :event-forwarder {:register id
                                         :events   all-events
-                                        :to       id}}
+                                        :to       [id ]}}
 
               ;; Teardown the flow coordinator:
               ;;  1. remove this event handler
@@ -87,7 +95,7 @@
 
               ;; A new event has been forwarded to this handler. What does it mean?
               ;;  1. does this new event mean we need to dispatch another
-              ;;  2. remember that this new event has happened
+              ;;  2. save that this event has happened
               (let [[_ [forwarded-event-id & args]] event-v
                     {:keys [seen-events started-tasks]} (get-state db)
                     new-seen-events    (conj seen-events forwarded-event-id)
@@ -95,7 +103,7 @@
                     ready-task-ids     (->> ready-tasks (map :dispatch) set)
                     new-started-tasks  (set/union started-tasks ready-task-ids)]
                 {:db       (set-state db new-seen-events new-started-tasks)
-                 :dispatch (concat (map :dispatch ready-tasks))})))))
+                 :dispatch (concat (map :dispatch ready-tasks))}))))
 
 (re-frame.core/def-fx
   :aync-flow
