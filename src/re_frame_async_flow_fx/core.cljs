@@ -19,7 +19,7 @@
   return the list of tasks which should now be started.
   In effect, given the list of events seen has changed, what is the consequence."
   [rules now-seen-events started-tasks]
-  (->> (remove (comp started-tasks :id) rules)
+  (->> (remove (comp started-tasks :id) rules)   ;; we identify tasks by `:dispatch`
        (filterv (fn [task] ((:when task) (:events task) now-seen-events)))))
 
 
@@ -28,19 +28,21 @@
   "Massage the supplied rules as follows:
     - replace `:when` keyword value with a function which implements the predicate
     - ensure that `:dispatch` is always a list and turn  `:done` into the right event
-    - ensure that :events is a set"
+    - ensure that :events is a set
+    - add a unique id"
   [id rules]
   (let [halt-event  [id :halt]
         when->fn {:seen all-events-seen? :all-events-seen all-events-seen? :any-events-seen any-events-seen?}]
     (->> rules
-         (map (fn [{:keys [when events dispatch]}]
-                {:when      #(when->fn when)
-                 :events    (if (seq events) (set events) #{events})
-                 :disptach  (cond
-                              (vector? dispatch)  (list dispatch)
-                              (list? dispatch)    (map (fn [d] (if (= d :halt) halt-event d) dispatch))
-                              (= :halt dispatch)  (list halt-event)
-                              :else  (js/console.error "aync-flow: dispatch value not valid: " dispatch))})))))
+         (map-indexed (fn [index {:keys [when events dispatch]}]
+                        {:id        index
+                         :when      #(when->fn when)
+                         :events    (if (seq events) (set events) #{events})
+                         :disptach  (cond
+                                      (vector? dispatch)  (list dispatch)
+                                      (list? dispatch)    (map (fn [d] (if (= d :halt) halt-event d) dispatch))
+                                      (= :halt dispatch)  (list halt-event)
+                                      :else  (js/console.error "aync-flow: dispatch value not valid: " dispatch))})))))
 
 
 (defn make-flow-event-handler
@@ -100,7 +102,7 @@
                     {:keys [seen-events started-tasks]} (get-state db)
                     new-seen-events    (conj seen-events forwarded-event-id)
                     ready-tasks        (newly-startable-tasks rules new-seen-events started-tasks)
-                    ready-task-ids     (->> ready-tasks (map :dispatch) set)
+                    ready-task-ids     (->> ready-tasks (map :id) set)
                     new-started-tasks  (set/union started-tasks ready-task-ids)]
                 {:db       (set-state db new-seen-events new-started-tasks)
                  :dispatch (concat (map :dispatch ready-tasks))}))))
