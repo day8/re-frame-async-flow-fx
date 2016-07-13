@@ -22,8 +22,6 @@
   (->> (remove (comp started-tasks :id) rules)   ;; we identify tasks by `:dispatch`
        (filterv (fn [task] ((:when task) (:events task) now-seen-events)))))
 
-
-
 (defn massage-rules
   "Massage the supplied rules as follows:
     - replace `:when` keyword value with a function which implements the predicate
@@ -73,7 +71,7 @@
     ;;   (dispatch [:id :done])
     ;;   (dispatch [:id [:a :forwarded :event :vector])
     ;;
-    (fn flow-event-hander
+    (fn async-flow-event-hander
       [{:keys [db]} event-v]
         (condp = event-v
 

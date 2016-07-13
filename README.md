@@ -1,19 +1,19 @@
-### Async Control Flow In re-frame
+## Async Control Flow In re-frame
 
 This library provides a re-frame effects handler, named `:async-flow`, 
 which wrangles async tasks.
 
 It is particularly useful for managing control flow at app boot time.
 
-### Quick Start Guide
+## Quick Start Guide
  
-#### Step 1. Add Dependency
+### Step 1. Add Dependency
  
 Add the following project dependency:  
 [![Clojars Project](http://clojars.org/re-frame-async-flow-fx/latest-version.svg)](http://clojars.org/re-frame-async-flow-fx)
 
 
-#### Step 2. Registration
+### Step 2. Registration
 
 In your root namespace, called perhaps `core.cljs`, in the `ns`...
 
@@ -30,7 +30,7 @@ handler to self-register with re-frame, which is important
 to everything that follows.
 
 
-#### Step 3. Initiate Boot
+### Step 3. Initiate Boot
 
 In your app's main entry function, we want to initiate the boot process:
 
@@ -52,7 +52,7 @@ defensively in our subscriptions and views, guarding against having an uninitial
 
 This is the only known case where you should use `dispatch-sync` over `dispatch`. 
 
-#### Step 4. Event handler
+### Step 4. Event handler
 
 In your event handlers namespace, perhaps called `events.cljs`...
 
@@ -66,8 +66,8 @@ In your event handlers namespace, perhaps called `events.cljs`...
      {:when :seen :events :success-Z  :dispatch :halt}
      {:when :seen-any-of :events [:fail-X :fail-Y :fail-Z] :dispatch  (list [:fail-boot] :halt)}])
 ```
-More on this data structure in the Tutorial below, but for the moment know that the above says to 
-run tasks X, Y and Z serially, like dominoes. It also says how to handle failure and success.
+You can almost read the `rules` as English sentences to understand what's being specified. But more
+on this data structure in the Tutorial (below).
  
 **Second**, write the event handler for `:boot`:
 
@@ -97,7 +97,7 @@ Branch | Build Status
 
 ---
 
-### Tutorial
+## Tutorial
 
 #### Problem Definition
 
@@ -309,14 +309,14 @@ Further Notes:
 
 7. A word on Retries XXXX
 
-### The Data Structure 
+### The Flow Specification 
 
-The data structure has the following fields:
+The async-flow data structure has the following fields:
 
-  - `:id` - optional - an identifier, probably a namespaced keyword.  
+  - `:id` - optional - an identifier, typically a namespaced keyword.  
     It must not clash with the identifier for any event handler (because internally 
-    an event handler is created using this id).  
-    If absent `:async/flow` is used.
+    an event handler is registered using this id).  
+    If absent, `:async/flow` is used.
   - `db-path` - optional - the path within `app-db` where the coordination logic should store state. Two pieces
      of state are stored:  the set of seen events, and the set of started tasks.
     If absent, then state is not stored in app-db and is instead held in an internal atom. 
@@ -324,17 +324,17 @@ The data structure has the following fields:
     but it is not essential. 
   - `first-dispatch` - mandatory - the event which initiates the async flow. This is often 
     something like the event which will open a websocket or HTTP GET configuration from the server.
-  - `rules` - mandatory - a vector of maps. Each map is a "rule".
+  - `rules` - mandatory - a vector of maps. Each map is a `rule`.
   
-Rules have the following 3 fields:
+A `rule` has the following 3 fields:
 
   - `:when`  one of `:seen`, `:seen-all-of`, `:seen-any-of`
     `:seen` and `:seen-all-of` are the same.
-  - `:events` can be a single keyword or a seq of keywords, presumably event ids
-  - `:dispatch` can be a single vector representing one thing to dispatch, 
+  - `:events` either a single keyword, or a seq of keywords, presumably event ids
+  - `:dispatch` can be a single vector representing one event to dispatch, 
      or a list of vectors representing multiple events to `dispatch`  
-     The special value `:halt` can be supplied in place of a vector, and it means
-     to teardown the flow. 
+     The special value `:halt` can be supplied in place of an event vector, and it 
+     means to teardown the flow. 
 
 
 ### Under The Covers 
@@ -342,16 +342,16 @@ Rules have the following 3 fields:
 How exactly does async-flow work? 
 
 It does the following:
-  1. It creates an event handler to perform the flow.  
-  2. It registers this event handler using the `:id` supplied in `boot-flow` which was `:my-flow`
-  3. It organises that all events mentioned in `boot-flow` rules are be "forward" to this event handler, 
-     after they have been handled by their normal handlers.
-     So, let's say the event `[:abc]` was part of `boot-flow`. After `[:abc]` was handled by its normal handler
-     there would be an additional `(dispatch [:my-flow  [:abc]])`.  In effect the event `[:abc]` is 
-     dispatched as a 1st parameter to the coordinating handler registered in step 2. 
-  4. the event handler keeps a track of what events it has seen, and what tasks have already 
-     been started. It keep this state at the path nominated in `:db-path`. 
-  5. the event handler uses your `boot-flow` spec and the state it maintains to work out how it should 
+  1. It creates an event handler to perform the flow coordination.  
+  2. It registers this event handler using the supplied `:id` 
+  3. It requests that all `:events` mentioned in `flow` rules should be "forwarded" to 
+     this event handler, after they have been handled by their normal handlers.
+     So, if the event `[:abc 1]` was part of `flow` spec, then after `[:abc 1]` was handled by its normal handler
+     there would be an additional `(dispatch [:async/flow  [:abc 1]])` which would be handled the coordinator 
+     created in steps 1 and 2.  
+  4. the event handler keeps track of what events have occurred, and what tasks have already 
+     been started. It keeps this state at the path nominated in `:db-path`. 
+  5. the event handler uses your `flow` specification and the state it maintains to work out how it should 
      respond to each arriving event. 
   6. At some point, the flow finishes (failed or succeeded) and the event handler from 1 
      is de-registered, and event sniffing is stopped. 
@@ -382,14 +382,14 @@ But there are trade-offs.
 First, it does indeed mean encoding the state machine in "code" (and letting the generator function be 
 the state machine). In clojure, we have a preference for "programming in data".  
 
-Second, coding (in javascript) a more complicated state machines with a bunch of error states and 
+Second, coding (in javascript) a more complicated state machines with a bunch of failure states and 
 cascades will ultimately get messy. Time is like a liquid under pressure and it will force it way 
  out through the cracks in the abstraction.  History tells us to implement state machines 
  in a table driven way (data driven way). 
 
 So we choose data.
 
-But it would be fairly easy to create a re-frame version of redux-saga.  In closure 
-we have core.async instead of generator functions. That is left as an exercise for the reader. 
+But it would be quite possible to create a re-frame version of redux-saga.  In closure 
+we have core.async instead of generator functions. That is left as an exercise for the enthusiastic reader. 
 
   
