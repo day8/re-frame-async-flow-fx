@@ -2,8 +2,8 @@
   (:require [cljs.test :refer-macros [is deftest]]
             [re-frame-async-flow-fx.core :as core]))
 
-(enable-console-print!)
-
 (deftest stub
-  "stub test to excercise test framework"
+  "stub test to excercise test framework and devtools"
+  (let [data {:feed {:flint 5}}]
+    (js-debugger))
   (is true))
