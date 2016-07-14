@@ -20,10 +20,11 @@ Add the following project dependency:
 In your root namespace, called perhaps `core.cljs`, in the `ns`...
 
 ```clj
-(require 
-   ...
-   [re-frame-async-flow-fx]
-   ...)
+(ns app.core
+  (:require 
+    ...
+    [re-frame-async-flow-fx]   ;; <-- add this
+    ...))
 ```
 
 Because we never subsequently use this namespace, it 
