@@ -4,7 +4,7 @@ Thank you for taking the time to contribute!
 
 ## Support questions
 
-The Github issues are for bug reports and feature requests. Support requests and usage
+The Github issues are for bug reports and feature requests only. Support requests and usage
 questions should go to the re-frame [Clojure Slack channel](http://clojurians.net) or
 the [ClojureScript mailing list](https://groups.google.com/forum/#!forum/clojurescript).
 
@@ -13,14 +13,21 @@ the [ClojureScript mailing list](https://groups.google.com/forum/#!forum/clojure
 
 **Create pull requests to the develop branch**, work will be merged onto master when it is ready to be released.
 
-## Running the tests
+## Running tests
 
 #### Via Browser/HTML
+
+To build the tests and run them in one step, just:
 ```sh
-lein test-once  # builds re-frame-async-flow-fx tests & opens browser on test/test.html
-                # or lein test-auto # then open a browser on test/test.html
-                # and refresh browser to rerun tests after each auto compile.
+lein test-once  # compiles & then opens test.html in the browser
 ```
+
+You can also get auto compiles via:
+```sh
+lein test-auto
+```
+but you'll need to manually open `test/test.html` in a browser. And you'll also need to 
+manually reload this page after each auto compile. 
 
 #### Via Karma
 
