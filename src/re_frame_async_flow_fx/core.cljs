@@ -30,7 +30,10 @@
     - add a unique id"
   [id rules]
   (let [halt-event  [id :halt]
-        when->fn {:seen? all-events-seen? :all-events-seen? all-events-seen? :any-events-seen? any-events-seen?}]
+        when->fn {:seen? all-events-seen?
+                  :seen-both? all-events-seen?
+                  :all-events-seen? all-events-seen?
+                  :any-events-seen? any-events-seen?}]
     (->> rules
          (map-indexed (fn [index {:keys [when events dispatch]}]
                         (let [w #(when->fn when)
