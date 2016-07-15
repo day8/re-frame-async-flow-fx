@@ -66,10 +66,10 @@ In your event handlers namespace, perhaps called `events.cljs`...
 (def boot-flow 
   {:first-dispatch [:do-X]              ;; what event kicks things off ?
    :rules [
-     {:when :seen :events :success-X  :dispatch [:do-Y]}
-     {:when :seen :events :success-Y  :dispatch [:do-Z]}
-     {:when :seen :events :success-Z  :dispatch :halt}
-     {:when :seen-any-of :events [:fail-X :fail-Y :fail-Z] :dispatch  (list [:fail-boot] :halt)}])
+     {:when :seen? :events :success-X  :dispatch [:do-Y]}
+     {:when :seen? :events :success-Y  :dispatch [:do-Z]}
+     {:when :seen? :events :success-Z  :dispatch :halt}
+     {:when :seen-any-of? :events [:fail-X :fail-Y :fail-Z] :dispatch  (list [:fail-boot] :halt)}])
 ```
 You can almost read the `rules` as English sentences to understand what's being specified. Suffice 
 it to say that tasks X, Y and Z will be run serially like dominoes. Much more complicated 
@@ -96,10 +96,16 @@ and actions what's provided in `boot-flow`.
 
 ----
 
+[![Clojars Project](https://img.shields.io/clojars/v/re-frame.svg)]
+
+https://circleci.com/gh/:owner>/:repo.svg?style=shield&circle-token=:circle-ci-badge-token
+
+[![GitHub license](https://img.shields.io/github/license/Day8/re-frame-async-flow-fx.svg)](license.txt)
+
 Branch | Build Status
 ----------|--------
-`master` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)
-`develop` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop)
+`master` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)
+`develop` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop)
 
 ---
 
@@ -256,10 +262,10 @@ Collectively, a set of When-E1-then-E2 rules can describe the entire async boot 
 
 Here's how that might look in data:
 ```clj
-[{:when :seen        :events :success-db-connect   :dispatch (list [:do-query-user] [:do-query-site-prefs])}
- {:when :seen-all-of :events [:success-user-query :success-site-prefs-query]   :dispatch (list [:success-boot] :halt)}
- {:when :seen-any-of :events [:fail-user-query :fail-site-prefs-query :fail-db-connect] :dispatch  (list [:fail-boot] :halt)}
- {:when :seen        :events :success-user-query   :dispatch [:do-intercom]}]
+[{:when :seen?        :events :success-db-connect   :dispatch (list [:do-query-user] [:do-query-site-prefs])}
+ {:when :seen-all-of? :events [:success-user-query :success-site-prefs-query]   :dispatch (list [:success-boot] :halt)}
+ {:when :seen-any-of? :events [:fail-user-query :fail-site-prefs-query :fail-db-connect] :dispatch  (list [:fail-boot] :halt)}
+ {:when :seen?        :events :success-user-query   :dispatch [:do-intercom]}]
 ```
 
 That's a vector of 4 maps (one per line), where each represents a single rule. Try to read each 
@@ -267,7 +273,7 @@ line as if it was an English sentence and something like this should emerge: `wh
 
 The structure of each rule (map) is: 
 ```clj
-{:when     X      ;; one of:  :seen, :seen-all-of, :seen-any-off, or a predicate function
+{:when     X      ;; one of:  :seen?, :seen-all-of?, :seen-any-off? 
  :events   Y      ;; either a single keyword or a seq of keywords representing event ids
  :dispatch Z}     ;; either a single vector (to dispatch) or a list of vectors (to dispatch). :halt is special
 ```
@@ -319,10 +325,12 @@ Further Notes:
 
 The async-flow data structure has the following fields:
 
-  - `:id` - optional - an identifier, typically a namespaced keyword.  
-    It must not clash with the identifier for any event handler (because internally 
+  - `:id` - optional - an identifier, typically a namespaced keyword. Expected to be unique. 
+    Must not clash with the identifier for any event handler (because internally 
     an event handler is registered using this id).  
-    If absent, `:async/flow` is used.
+    If absent, `:async/flow` is used.  
+    If this default is used then two flows can't be running at once because they'd be using the same id.   
+    
   - `db-path` - optional - the path within `app-db` where the coordination logic should store state. Two pieces
      of state are stored:  the set of seen events, and the set of started tasks.
     If absent, then state is not stored in app-db and is instead held in an internal atom. 
@@ -334,8 +342,8 @@ The async-flow data structure has the following fields:
   
 A `rule` has the following 3 fields:
 
-  - `:when`  one of `:seen`, `:seen-all-of`, `:seen-any-of`
-    `:seen` and `:seen-all-of` are the same.
+  - `:when`  one of `:seen?`, `:seen-all-of?`, `:seen-any-of?`
+    `:seen?` and `:seen-all-of?` are the same.
   - `:events` either a single keyword, or a seq of keywords, presumably event ids
   - `:dispatch` can be a single vector representing one event to dispatch, 
      or a list of vectors representing multiple events to `dispatch`  

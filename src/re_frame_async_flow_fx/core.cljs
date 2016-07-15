@@ -16,8 +16,7 @@
 
 (defn newly-startable-tasks
   "Given the accumulated set of seen events and the set of tasks already started,
-  return the list of tasks which should now be started.
-  In effect, given the list of events seen has changed, what is the consequence."
+  return the list of tasks which should now be started"
   [rules now-seen-events already-started-tasks]
   (->> (remove (comp already-started-tasks :id) rules)
        (filterv (fn [task] ((:when task) (:events task) now-seen-events)))))
@@ -25,13 +24,13 @@
 
 (defn massage-rules
   "Massage the supplied rules as follows:
-    - replace `:when` keyword value with a function which implements the predicate
+    - replace `:when` keyword value with a function  implements the predicate
     - ensure that `:dispatch` is always a list and turn  `:done` into the right event
     - ensure that :events is a set
     - add a unique id"
   [id rules]
   (let [halt-event  [id :halt]
-        when->fn {:seen all-events-seen? :all-events-seen all-events-seen? :any-events-seen any-events-seen?}]
+        when->fn {:seen? all-events-seen? :all-events-seen? all-events-seen? :any-events-seen? any-events-seen?}]
     (->> rules
          (map-indexed (fn [index {:keys [when events dispatch]}]
                         {:id        index
@@ -110,7 +109,7 @@
   :aync-flow
   (fn [{:as flow :keys [id]}]
     (re-frame.core/def-event-fx
-      (or id default-id)                                 ;; add debug middleware???  XXX
+      (or id default-id)                                 ;; add debug middleware if dp-patth set ???  XXX
       (make-flow-event-handler flow))
     (re-frame.core/dispatch [id :steup])))
 
