@@ -107,6 +107,8 @@
                  :dispatch (concat (map :dispatch ready-tasks))}))))
 
 
+;; -- Register handler with re-frame
+
 (re-frame.core/def-fx
   :aync-flow
   (fn [{:as flow :keys [id]}]
