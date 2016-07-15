@@ -33,14 +33,16 @@
         when->fn {:seen? all-events-seen? :all-events-seen? all-events-seen? :any-events-seen? any-events-seen?}]
     (->> rules
          (map-indexed (fn [index {:keys [when events dispatch]}]
+                        (let [w #(when->fn when)
+                              _  (if-not w (js/console.error "aync-flow: found illegal value for :when: " when))]
                         {:id        index
-                         :when      #(when->fn when)
+                         :when      w
                          :events    (if (seq events) (set events) #{events})
                          :disptach  (cond
                                       (vector? dispatch)  (list dispatch)
                                       (list? dispatch)    (map (fn [d] (if (= d :halt) halt-event d) dispatch))
                                       (= :halt dispatch)  (list halt-event)
-                                      :else  (js/console.error "aync-flow: dispatch value not valid: " dispatch))})))))
+                                      :else  (js/console.error "aync-flow: dispatch value not valid: " dispatch))}))))))
 
 
 (defn make-flow-event-handler
