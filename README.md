@@ -60,15 +60,16 @@ handler to self-register with re-frame, which is important
 to everything that follows.
 
 
-**Second**, create a data structure which defines the async flow required:
+**Second**, write a function which returns a data structure defining the async flow required:
 ```clj
-(def boot-flow 
+(defn boot-flow
+  []
   {:first-dispatch [:do-X]              ;; what event kicks things off ?
    :rules [
      {:when :seen? :events :success-X  :dispatch [:do-Y]}
      {:when :seen? :events :success-Y  :dispatch [:do-Z]}
      {:when :seen? :events :success-Z  :dispatch :halt}
-     {:when :seen-any-of? :events [:fail-X :fail-Y :fail-Z] :dispatch  (list [:fail-boot] :halt)}])
+     {:when :seen-any-of? :events [:fail-X :fail-Y :fail-Z] :dispatch  (list [:fail-boot] :halt)}]})
 ```
 You can almost read the `rules` as English sentences to understand what's being specified. Suffice 
 it to say that tasks X, Y and Z will be run serially like dominoes. Much more complicated 
@@ -89,13 +90,12 @@ This event handler will do two things:
     {:db (-> {}                  ;;  do whatever synchronous work needs to be done
             task1-fn             ;; ?? set state to show "loading" twirly for user??
             task2-fn)            ;; ?? do some other simple initialising of state
-     :async-flow  boot-flow}))   ;; kick off the async process
+     :async-flow  (boot-flow)})) ;; kick off the async process
 ```
 
 Notice at that last line. This library provides the "effect handler" which implements `:async-flow`. It reads
-and actions what's provided in `boot-flow`.
+and actions what's provided by `(boot-flow)`.
 
----
 
 ## Tutorial
 
