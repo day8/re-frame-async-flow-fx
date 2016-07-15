@@ -2,7 +2,7 @@
 
 ## Async Control Flow In re-frame
 
-This library provides a re-frame effects handler, named `:async-flow`, 
+Herein a re-frame effects handler, named `:async-flow`, 
 which wrangles async tasks.
 
 It is particularly useful for managing control flow at app boot time.
@@ -49,7 +49,7 @@ In your app's main entry function, we want to initiate the boot process:
 Why the use of `dispatch-sync`, rather than `dispatch`?
  
 Well, `dispatch-sync` is convenient here because it ensures that
-`app-db` is synchronously initialised **before** we start mounting views (which subscribe to state).  Using   
+`app-db` is synchronously initialised **before** we start mounting views (which subscribe to state).  Using
 `dispatch` would work too, except it runs the handler **later**.  So, we'd have to then code 
 defensively in our subscriptions and views, guarding against having an uninitialised `app-db`. 
 
@@ -57,7 +57,7 @@ This is the only known case where you should use `dispatch-sync` over `dispatch`
 
 ### Step 4. Event handler
 
-Remember that `(dispatch-sync [:boot])` in step 2.  It now time to write the event handler. 
+Remember that `(dispatch-sync [:boot])` in step 3.  It is now time to write the event handler. 
 
 In your event handlers namespace, perhaps called `events.cljs`...
 
@@ -83,7 +83,7 @@ This event handler will do two things:
 
 ```clj
 (def-event-fx                    ;; note the fx
-  :boot                          ;; usage:  (dispatch [:boot])  See step 2
+  :boot                          ;; usage:  (dispatch [:boot])  See step 3
   (fn [_ _]
     {:db (-> {}                  ;;  do whatever synchronous work needs to be done
             task1-fn             ;; ?? set state to show "loading" twirly for user??
