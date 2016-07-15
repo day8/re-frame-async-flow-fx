@@ -95,7 +95,7 @@
               ;;   3. stop the events forwarder
               :halt {:db (dissoc db db-path)
                      :event-forwarder {:unregister id}
-                     :deregister-event-handler id})
+                     :deregister-event-handler id}
 
               ;; A new event has been forwarded to this handler. What does it mean?
               ;;  1. does this new event mean we need to dispatch another
@@ -107,7 +107,7 @@
                     ready-task-ids     (->> ready-tasks (map :id) set)
                     new-started-tasks  (set/union started-tasks ready-task-ids)]
                 {:db       (set-state db new-seen-events new-started-tasks)
-                 :dispatch (concat (map :dispatch ready-tasks))}))))
+                 :dispatch (concat (map :dispatch ready-tasks))})))))
 
 
 ;; -- Register handler with re-frame
