@@ -4,7 +4,6 @@
   :license      {:name "MIT"}
   :dependencies [[org.clojure/clojure        "1.8.0"]
                  [org.clojure/clojurescript  "1.9.89"]
-                 [reagent                    "0.6.0-rc"]
                  [re-frame                   "0.8.0-SNAPSHOT"]]
 
   :profiles {:debug {:debug true}
@@ -12,7 +11,6 @@
                                     [binaryage/devtools "0.7.2"]]
                      :plugins      [[lein-cljsbuild     "1.1.3"]
                                     [lein-npm           "0.6.2"]
-                                    [lein-figwheel      "0.5.4-7"]
                                     [lein-shell         "0.5.0"]]}}
 
   :clean-targets  [:target-path "run/compiled"]
