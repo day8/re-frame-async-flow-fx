@@ -18,9 +18,10 @@
   "Given the accumulated set of seen events and the set of tasks already started,
   return the list of tasks which should now be started.
   In effect, given the list of events seen has changed, what is the consequence."
-  [rules now-seen-events started-tasks]
-  (->> (remove (comp started-tasks :id) rules)   ;; we identify tasks by `:dispatch`
+  [rules now-seen-events already-started-tasks]
+  (->> (remove (comp already-started-tasks :id) rules)
        (filterv (fn [task] ((:when task) (:events task) now-seen-events)))))
+
 
 (defn massage-rules
   "Massage the supplied rules as follows:
@@ -62,8 +63,7 @@
                       (fn [db] (get-in db db-path))
                       (fn [_]  @local-store))
 
-        rules  (massage-rules id rules)
-        all-events  (apply set/union (map :events rules))]       ;; all of the events refered to in the rules
+        rules  (massage-rules id rules)]       ;; all of the events refered to in the rules
 
     ;; return an event handler which will manage the flow
     ;; This event handler will receive 3 kinds of events
@@ -76,22 +76,22 @@
         (condp = event-v
 
               ;; Setup the flow coordinator:
-              ;;  1. Initialise the state  (seen-events and started-tasks)
-              ;;  2. dispatch the first event, to kick start
-              ;;  3. arrange for the events to get forwarded to this handler
+              ;;   1. Initialise the state  (seen-events and started-tasks)
+              ;;   2. dispatch the first event, to kick start
+              ;;   3. arrange for the events to get forwarded to this handler
               :setup {:db (set-state db #{} #{})
                       :dispatch first-dispatch
-                      :event-forwarder {:register id
-                                        :events   all-events
-                                        :to       [id ]}}
+                      :event-forwarder {:register    id
+                                        :events      (apply set/union (map :events rules))
+                                        :dispatch-to [id]}}
 
               ;; Teardown the flow coordinator:
-              ;;  1. remove this event handler
-              ;;  2. remove state
-              ;;  3. stop the events forwarder
+              ;;   1. remove this event handler
+              ;;   2. remove any state stored in app-db
+              ;;   3. stop the events forwarder
               :halt {:db (dissoc db db-path)
                      :event-forwarder {:unregister id}
-                     :deregister-event-handler id})          ;; XXX write this effects handler
+                     :deregister-event-handler id})
 
               ;; A new event has been forwarded to this handler. What does it mean?
               ;;  1. does this new event mean we need to dispatch another
@@ -105,11 +105,12 @@
                 {:db       (set-state db new-seen-events new-started-tasks)
                  :dispatch (concat (map :dispatch ready-tasks))}))))
 
+
 (re-frame.core/def-fx
   :aync-flow
   (fn [{:as flow :keys [id]}]
     (re-frame.core/def-event-fx
-      (or id default-id)                                 ;; add debug middleware???  XXXX
+      (or id default-id)                                 ;; add debug middleware???  XXX
       (make-flow-event-handler flow))
     (re-frame.core/dispatch [id :steup])))
 
