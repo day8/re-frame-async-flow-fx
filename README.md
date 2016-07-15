@@ -1,6 +1,11 @@
 > Status:  still under development. Don't use yet.
 
-## Async Control Flow In re-frame
+## Async Control Flow In re-frame  
+[![GitHub license](https://img.shields.io/github/license/Day8/re-frame-async-flow-fx.svg)](license.txt)   
+[![Clojars Project](https://img.shields.io/clojars/v/re-frame-async-flow-fx/latest-version.svg)](https://clojars.org/re-frame-async-flow-fx)  
+master:  [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)  
+develop: [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop)  
+[![Sample Project](https://img.shields.io/badge/project-example-ff69b4.svg)](https://github.com/Day8/re-frame-async-flow-fx/sample)
 
 Herein a re-frame effects handler, named `:async-flow`, 
 which wrangles async tasks.
@@ -12,31 +17,12 @@ It is particularly useful for managing control flow at app boot time.
 ### Step 1. Add Dependency
  
 Add the following project dependency:  
-[![Clojars Project](http://clojars.org/re-frame-async-flow-fx/latest-version.svg)](http://clojars.org/re-frame-async-flow-fx)
+[![Clojars Project](https://img.shields.io/clojars/v/re-frame-async-flow-fx/latest-version.svg)](https://clojars.org/re-frame-async-flow-fx)
 
 
-### Step 2. Registration
-
-In your root namespace, called perhaps `core.cljs`, in the `ns`...
-
-```clj
-(ns app.core
-  (:require 
-    ...
-    [re-frame-async-flow-fx]   ;; <-- add this
-    ...))
-```
-
-Because we never subsequently use this namespace, it 
-appears redundant.  But the require will cause the `:async-flow` effect 
-handler to self-register with re-frame, which is important
-to everything that follows.
-
-
-### Step 3. Initiate Boot
+### Step 2. Initiate Boot
 
 In your app's main entry function, we want to initiate the boot process:
-
 ```clj
 (defn ^:export main
   []
@@ -55,13 +41,26 @@ defensively in our subscriptions and views, guarding against having an uninitial
 
 This is the only known case where you should use `dispatch-sync` over `dispatch`. 
 
-### Step 4. Event handler
+### Step 3. Registration And Use
 
-Remember that `(dispatch-sync [:boot])` in step 3.  It is now time to write the event handler. 
+In the namespace where you register your event handlers, perhaps called `events.cljs`, you have 3 things to do.
 
-In your event handlers namespace, perhaps called `events.cljs`...
+**First**, add this require to the `ns`:
+```clj
+(ns app.events
+  (:require 
+    ...
+    [re-frame-async-flow-fx]   ;; <-- add this
+    ...))
+```
 
-**First**, create a data structure which defines the async flow required:
+Because we never subsequently use this require, it 
+appears redundant.  But the require will cause the `:async-flow` effect 
+handler to self-register with re-frame, which is important
+to everything that follows.
+
+
+**Second**, create a data structure which defines the async flow required:
 ```clj
 (def boot-flow 
   {:first-dispatch [:do-X]              ;; what event kicks things off ?
@@ -75,14 +74,16 @@ You can almost read the `rules` as English sentences to understand what's being 
 it to say that tasks X, Y and Z will be run serially like dominoes. Much more complicated 
 scenarios are possible.  But more on this data structure in the Tutorial (below).
  
-**Second**, write the event handler for `:boot`:
+**Third**, write the event handler for `:boot`:
+
+Remember that `(dispatch-sync [:boot])` in step 2. We are now writing and registering the associated event handler. 
 
 This event handler will do two things:
   1. It goes though an initial synchronous series of tasks which get app-db into the right state
   2. It kicks off a multistep asynchronous flow
 
 ```clj
-(def-event-fx                    ;; note the fx
+(def-event-fx                    ;; note the -fx
   :boot                          ;; usage:  (dispatch [:boot])  See step 3
   (fn [_ _]
     {:db (-> {}                  ;;  do whatever synchronous work needs to be done
@@ -91,21 +92,8 @@ This event handler will do two things:
      :async-flow  boot-flow}))   ;; kick off the async process
 ```
 
-Look at that last line. This library defines the "effect handler" which implements `:async-flow`. It reads
+Notice at that last line. This library provides the "effect handler" which implements `:async-flow`. It reads
 and actions what's provided in `boot-flow`.
-
-----
-
-[![Clojars Project](https://img.shields.io/clojars/v/re-frame.svg)]
-
-https://circleci.com/gh/:owner>/:repo.svg?style=shield&circle-token=:circle-ci-badge-token
-
-[![GitHub license](https://img.shields.io/github/license/Day8/re-frame-async-flow-fx.svg)](license.txt)
-
-Branch | Build Status
-----------|--------
-`master` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)
-`develop` | [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop)
 
 ---
 
