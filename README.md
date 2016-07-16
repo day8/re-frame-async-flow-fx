@@ -313,7 +313,7 @@ Further Notes:
 
 The `:async-flow` data structure has the following fields:
 
-  - `:id` - optional - an identifier, typically a namespaced keyword. Must be unique to each flow. 
+  - `:id` - optional - an identifier, typically a namespaced keyword. Each flow should have a unique id. 
     Must not clash with the identifier for any event handler (because internally 
     an event handler is registered using this id).  
     If absent, `:async/flow` is used.  
