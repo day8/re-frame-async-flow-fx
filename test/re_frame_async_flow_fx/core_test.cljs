@@ -83,7 +83,7 @@
            {:db {:p {:seen-events #{:1} :started-tasks #{0}}}}))
 
     ;; event should cause new formard
-    #_(is (= (handler-fn
+    (is (= (handler-fn
              {:db {:p {:seen-events #{}
                        :started-tasks #{}}}}
              [:test-id [:1]])

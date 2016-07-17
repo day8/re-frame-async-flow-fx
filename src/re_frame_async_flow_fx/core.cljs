@@ -115,7 +115,7 @@
                     new-started-tasks  (set/union started-tasks ready-task-ids)]
                 (merge
                     {:db       (set-state db new-seen-events new-started-tasks)}
-                    (when (seq ready-tasks) {:dispatch (concat (map :dispatch ready-tasks))})))))))
+                    (when (seq ready-tasks) {:dispatch (mapcat :dispatch ready-tasks)})))))))
 
 
 ;; -- Register effects handler with re-frame
