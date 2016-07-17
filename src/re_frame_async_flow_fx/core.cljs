@@ -24,22 +24,22 @@
 
 (defn massage-rules
   "Massage the supplied rules as follows:
-    - replace `:when` keyword value with a function  implements the predicate
-    - ensure that `:dispatch` is always a list and turn  `:done` into the right event
-    - ensure that :events is a set
-    - add a unique id"
-  [id rules]
-  (let [halt-event  [id :halt]
-        when->fn {:seen? all-events-seen?
-                  :seen-both? all-events-seen?
+    - replace `:when` keyword value with a function implementing the predicate
+    - ensure that `:dispatch` is always a list (even of one item) and transform `:halt` into an event.
+    - turn :events into a set
+    - add a unique :id, if one not already present"
+  [flow-id rules]
+  (let [halt-event  [flow-id :halt]
+        when->fn {:seen?            all-events-seen?
+                  :seen-both?       all-events-seen?
                   :all-events-seen? all-events-seen?
                   :any-events-seen? any-events-seen?}]
     (->> rules
-         (map-indexed (fn [index {:keys [when events dispatch]}]
-                        (let [w  (when->fn when)
-                              _  (assert (some? w) (str "aync-flow: found illegal value for :when: " when))]
-                          {:id        index
-                           :when      w
+         (map-indexed (fn [index {:keys [id when events dispatch]}]
+                        (let [when-as-fn  (when->fn when)
+                              _  (assert (some? when-as-fn) (str "aync-flow: found bad value for :when: " when))]
+                          {:id        (or id index)
+                           :when      when-as-fn
                            :events    (if (coll? events) (set events) #{events})
                            :dispatch  (cond
                                         (vector? dispatch)  (list dispatch)
@@ -48,7 +48,10 @@
                                         :else  (js/console.error "aync-flow: dispatch value not valid: " dispatch))}))))))
 
 
+;; -- Create Event Handler
+
 (defn make-flow-event-handler
+  "given a flow definitiion, returns an event handler which implements this definition"
   [{:keys [id db-path rules first-dispatch]}]
   (let [id  (or id default-id)
 
@@ -56,6 +59,7 @@
         ;; Two pieces of state are maintained:
         ;;  - the set of seen events
         ;;  - the set of started tasks
+        _           (assert (or (nil? db-path) (vector? db-path)) "aync-flow: db-path must be a vector")
         local-store (atom {})
         set-state   (if db-path
                       (fn [db seen started]
@@ -69,48 +73,52 @@
 
         rules  (massage-rules id rules)]       ;; all of the events refered to in the rules
 
-    ;; return an event handler which will manage the flow
-    ;; This event handler will receive 3 kinds of events
+    ;; Return an event handler which will manage the flow.
+    ;; This event handler will receive 3 kinds of events:
     ;;   (dispatch [:id :setup])
-    ;;   (dispatch [:id :done])
-    ;;   (dispatch [:id [:a :forwarded :event :vector])
+    ;;   (dispatch [:id :halt])
+    ;;   (dispatch [:id [:forwarded :event :vector]])
+    ;;
+    ;; This event handler returns a map of effects.
     ;;
     (fn async-flow-event-hander
       [{:keys [db]} event-v]
-        (condp = event-v
 
-              ;; Setup the flow coordinator:
-              ;;   1. Initialise the state  (seen-events and started-tasks)
-              ;;   2. dispatch the first event, to kick start
-              ;;   3. arrange for the events to get forwarded to this handler
+        (condp = event-v
+              ;; Setup this flow coordinator:
+              ;;   1. Establish initial state - :seen-events and :started-tasks are made empty sets
+              ;;   2. dispatch the first event, to kick start flow
+              ;;   3. arrange for the events to be forwarded to this handler
               :setup {:db (set-state db #{} #{})
                       :dispatch first-dispatch
                       :event-forwarder {:register    id
                                         :events      (apply set/union (map :events rules))
                                         :dispatch-to [id]}}
 
-              ;; Teardown the flow coordinator:
+              ;; Teardown this flow coordinator:
               ;;   1. remove this event handler
               ;;   2. remove any state stored in app-db
-              ;;   3. stop the events forwarder
+              ;;   3. deregister the events forwarder
               :halt {:db (dissoc db db-path)
                      :event-forwarder {:unregister id}
                      :deregister-event-handler id}
 
+              ;; Here we are managig the flow.
               ;; A new event has been forwarded to this handler. What does it mean?
-              ;;  1. does this new event mean we need to dispatch another
-              ;;  2. save that this event has happened
+              ;;  1. does this new event mean we need to dispatch another?
+              ;;  2. remember this event has happened
               (let [[_ [forwarded-event-id & args]] event-v
                     {:keys [seen-events started-tasks]} (get-state db)
                     new-seen-events    (conj seen-events forwarded-event-id)
                     ready-tasks        (newly-startable-tasks rules new-seen-events started-tasks)
                     ready-task-ids     (->> ready-tasks (map :id) set)
                     new-started-tasks  (set/union started-tasks ready-task-ids)]
-                {:db       (set-state db new-seen-events new-started-tasks)
-                 :dispatch (concat (map :dispatch ready-tasks))})))))
+                (merge
+                    {:db       (set-state db new-seen-events new-started-tasks)}
+                    (when (seq ready-tasks) {:dispatch (concat (map :dispatch ready-tasks))})))))))
 
 
-;; -- Register handler with re-frame
+;; -- Register effects handler with re-frame
 
 (re-frame.core/def-fx
   :aync-flow
