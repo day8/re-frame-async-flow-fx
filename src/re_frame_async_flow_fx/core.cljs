@@ -4,12 +4,12 @@
 
 (def default-id  :async/flow)
 
-(defn all-events-seen?
+(defn seen-all-of?
   [required-events seen-events]
   (empty? (set/difference required-events seen-events)))
 
 
-(defn any-events-seen?
+(defn seen-any-of?
   [required-events seen-events]
   (some? (seq (set/intersection seen-events required-events))))
 
@@ -30,10 +30,10 @@
     - add a unique :id, if one not already present"
   [flow-id rules]
   (let [halt-event  [flow-id :halt-flow]
-        when->fn {:seen?            all-events-seen?
-                  :seen-both?       all-events-seen?
-                  :all-events-seen? all-events-seen?
-                  :seen-any-of? any-events-seen?}]
+        when->fn {:seen?        seen-all-of?
+                  :seen-both?   seen-all-of?
+                  :seen-all-of? seen-all-of?
+                  :seen-any-of? seen-any-of?}]
     (->> rules
          (map-indexed (fn [index {:keys [id when events dispatch]}]
                         (let [when-as-fn  (when->fn when)

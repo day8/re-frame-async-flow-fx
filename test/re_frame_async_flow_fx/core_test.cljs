@@ -3,26 +3,26 @@
             [re-frame-async-flow-fx.core :as core]))
 
 (deftest test-all-events-seen?
-  (is (= (core/all-events-seen? #{:a}     #{:a})    true))
-  (is (= (core/all-events-seen? #{:a}     #{:a :b}) true))
-  (is (= (core/all-events-seen? #{:a :b}  #{:a :b}) true))
-  (is (= (core/all-events-seen? #{:a}     #{:b})    false))
-  (is (= (core/all-events-seen? #{:a :b}  #{:a :c}) false))
-  (is (= (core/all-events-seen? #{:a}     #{:b :c}) false))
-  (is (= (core/all-events-seen? #{:a}     #{})      false)))
+  (is (= (core/seen-all-of? #{:a} #{:a}) true))
+  (is (= (core/seen-all-of? #{:a} #{:a :b}) true))
+  (is (= (core/seen-all-of? #{:a :b} #{:a :b}) true))
+  (is (= (core/seen-all-of? #{:a} #{:b}) false))
+  (is (= (core/seen-all-of? #{:a :b} #{:a :c}) false))
+  (is (= (core/seen-all-of? #{:a} #{:b :c}) false))
+  (is (= (core/seen-all-of? #{:a} #{}) false)))
 
 
 (deftest test-any-events-seen?
-  (is (= (core/any-events-seen? #{:a}     #{:a})    true))
-  (is (= (core/any-events-seen? #{:a :b}  #{:a :b}) true))
-  (is (= (core/any-events-seen? #{:a :b}  #{:a :c}) true))
-  (is (= (core/any-events-seen? #{:a}     #{:b})    false))
-  (is (= (core/any-events-seen? #{:a}     #{})      false)))
+  (is (= (core/seen-any-of? #{:a} #{:a}) true))
+  (is (= (core/seen-any-of? #{:a :b} #{:a :b}) true))
+  (is (= (core/seen-any-of? #{:a :b} #{:a :c}) true))
+  (is (= (core/seen-any-of? #{:a} #{:b}) false))
+  (is (= (core/seen-any-of? #{:a} #{}) false)))
 
 
 (deftest test-newly-startable-tasks
-  (let [rules [{:id 1 :when core/all-events-seen?  :events #{:a :b}}
-               {:id 2 :when core/all-events-seen?  :events #{:a}}]]
+  (let [rules [{:id 1 :when core/seen-all-of?  :events #{:a :b}}
+               {:id 2 :when core/seen-all-of?  :events #{:a}}]]
   (is (= (core/newly-startable-tasks rules #{:c}  #{})
          []))
   (is (= (core/newly-startable-tasks rules #{:a}  #{2})
@@ -37,13 +37,13 @@
 
 (deftest test-massage-rules
   (is (= (core/massage-rules :my-id [{:when :seen? :events :1 :dispatch [:2]}])
-         (list {:id 0 :when core/all-events-seen? :events #{:1} :dispatch (list [:2])})))
+         (list {:id 0 :when core/seen-all-of? :events #{:1} :dispatch (list [:2])})))
 
   (is (= (core/massage-rules :my-id [{:when :seen-both? :events [:1 :2] :dispatch :halt-flow}])
-         (list {:id 0 :when core/all-events-seen? :events #{:1 :2} :dispatch (list [:my-id :halt-flow])})))
+         (list {:id 0 :when core/seen-all-of? :events #{:1 :2} :dispatch (list [:my-id :halt-flow])})))
 
   (is (= (core/massage-rules :my-id [{:when :seen-any-of? :events #{:1 :2} :dispatch (list [:2] :halt-flow)}])
-         (list {:id 0 :when core/any-events-seen? :events #{:1 :2} :dispatch (list [:2] [:my-id :halt-flow])}))))
+         (list {:id 0 :when core/seen-any-of? :events #{:1 :2} :dispatch (list [:2] [:my-id :halt-flow])}))))
 
 
 (deftest test-steup
