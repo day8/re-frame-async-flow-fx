@@ -113,10 +113,12 @@
               :rules []}
         handler-fn   (core/make-flow-event-handler flow)]
     (is (= (handler-fn {:db {}} :halt-flow)
-           {:db {}
+           { ;; :db {}
             :deregister-event-handler core/default-id
             :event-forwarder {:unregister core/default-id}}))))
 
+
+;; Aggh. I don't have dissoc-in available to make this work.
 #_(deftest test-halt2
     (let [flow {:id  :blah
                 :db-path [:p]

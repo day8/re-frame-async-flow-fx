@@ -99,7 +99,7 @@
         ;;   1. remove this event handler
         ;;   2. remove any state stored in app-db
         ;;   3. deregister the events forwarder
-        :halt-flow {:db (dissoc db db-path)  ;; Aggh. I need dissoc-in to make this work.
+        :halt-flow {;; :db (dissoc db db-path)  ;; Aggh. I need dissoc-in to make this work.
                     :event-forwarder {:unregister id}
                     :deregister-event-handler id}
 
