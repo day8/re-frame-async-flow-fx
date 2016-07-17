@@ -42,7 +42,7 @@
   (is (= (core/massage-rules :my-id [{:when :seen-both? :events [:1 :2] :dispatch :halt-flow}])
          (list {:id 0 :when core/all-events-seen? :events #{:1 :2} :dispatch (list [:my-id :halt-flow])})))
 
-  (is (= (core/massage-rules :my-id [{:when :any-events-seen? :events #{:1 :2} :dispatch (list [:2] :halt-flow)}])
+  (is (= (core/massage-rules :my-id [{:when :seen-any-of? :events #{:1 :2} :dispatch (list [:2] :halt-flow)}])
          (list {:id 0 :when core/any-events-seen? :events #{:1 :2} :dispatch (list [:2] [:my-id :halt-flow])}))))
 
 
@@ -64,7 +64,8 @@
               :id             :test-id
               :db-path        [:p]
               :rules [{:id 0 :when :seen? :events :1 :dispatch [:2]}
-                      {:id 1 :when :seen? :events :3 :dispatch :halt-flow}]}
+                      {:id 1 :when :seen? :events :3 :dispatch :halt-flow}
+                      {:id 2 :when :seen-any-of? :events [:4 :5] :dispatch [:6]}]}
         handler-fn  (core/make-flow-event-handler flow)]
 
     ;; event :no should cause nothing to happen
@@ -75,20 +76,36 @@
            {:db {:p {:seen-events #{:33 :no}
                      :started-tasks #{}}}}))
 
-    ;; don't forward :1 because is already started  (:id 0 is in :started-tasks)
+    ;; new event should not cause a new dispatch because task is already started  (:id 0 is in :started-tasks)
     (is (= (handler-fn
              {:db {:p {:seen-events #{:1}
                        :started-tasks #{0}}}}
              [:test-id [:1]])
            {:db {:p {:seen-events #{:1} :started-tasks #{0}}}}))
 
-    ;; event should cause new formard
+    ;; new event should cause a dispatch
     (is (= (handler-fn
              {:db {:p {:seen-events #{}
                        :started-tasks #{}}}}
              [:test-id [:1]])
            {:db {:p {:seen-events #{:1} :started-tasks #{0}}}
-            :dispatch (list [:2])}))))
+            :dispatch (list [:2])}))
+
+    ;; new event should cause a dispatch
+    (is (= (handler-fn
+             {:db {:p {:seen-events #{:1}
+                       :started-tasks #{0}}}}
+             [:test-id [:3]])
+           {:db {:p {:seen-events #{:1 :3} :started-tasks #{0 1}}}
+            :dispatch (list [:test-id :halt-flow])}))
+
+    ;; make sure :seen-any-of? works
+    (is (= (handler-fn
+             {:db {:p {:seen-events #{}
+                       :started-tasks #{}}}}
+             [:test-id [:4]])
+           {:db {:p {:seen-events #{:4} :started-tasks #{2}}}
+            :dispatch (list [:6])}))))
 
 
 (deftest test-halt1

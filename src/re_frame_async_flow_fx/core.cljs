@@ -33,7 +33,7 @@
         when->fn {:seen?            all-events-seen?
                   :seen-both?       all-events-seen?
                   :all-events-seen? all-events-seen?
-                  :any-events-seen? any-events-seen?}]
+                  :seen-any-of? any-events-seen?}]
     (->> rules
          (map-indexed (fn [index {:keys [id when events dispatch]}]
                         (let [when-as-fn  (when->fn when)
