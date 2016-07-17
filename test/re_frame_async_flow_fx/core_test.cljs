@@ -45,40 +45,68 @@
   (is (= (core/massage-rules :my-id [{:when :any-events-seen? :events #{:1 :2} :dispatch (list [:2] :halt)}])
          (list {:id 0 :when core/any-events-seen? :events #{:1 :2} :dispatch (list [:2] [:my-id :halt])}))))
 
-(deftest test-make-flow-handler-steup
-  (let [flow   {:first-dispatch [:1]
-                :rules [
-                        {:when :seen? :events :1 :dispatch [:2]}
-                        {:when :seen? :events :3 :dispatch :halt}]}
-        handler   (core/make-flow-event-handler flow)]
-    (is (= (handler {:db {}} :setup)
+
+(deftest test-steup
+  (let [flow {:first-dispatch [:1]
+              :rules [
+                      {:when :seen? :events :1 :dispatch [:2]}
+                      {:when :seen? :events :3 :dispatch :halt}]}
+        handler-fn   (core/make-flow-event-handler flow)]
+    (is (= (handler-fn {:db {}} :setup)
            {:db {}
             :dispatch [:1]
             :event-forwarder {:register core/default-id
                               :events #{:1 :3}
                               :dispatch-to [core/default-id]}}))))
 
+(deftest test-forwarding
+  (let [flow {:first-dispatch [:start]
+              :id             :test-id
+              :db-path        [:p]
+              :rules [{:id 0 :when :seen? :events :1 :dispatch [:2]}
+                      {:id 1 :when :seen? :events :3 :dispatch :halt}]}
+        handler-fn  (core/make-flow-event-handler flow)]
 
-#_(deftest test-make-flow-handler-forward
-  (let [flow   {:first-dispatch [:1]
-                :id             :test-id
-                :db-path        [:p]
-                :rules [
-                        {:when :seen? :events :1 :dispatch [:2]}
-                        {:when :seen? :events :3 :dispatch :halt}]}
-        handler   (core/make-flow-event-handler flow)]
-    (is (= (handler {:db {:p {:seen-events #{:33} :started-tasks #{}}}} [:1])
+    ;; event :no should cause nothing to happen
+    (is (= (handler-fn
+             {:db {:p {:seen-events #{:33}
+                       :started-tasks #{}}}}
+             [:test-id [:no]])
+           {:db {:p {:seen-events #{:33 :no}
+                     :started-tasks #{}}}}))
+
+    ;; don't forward :1 because is already started  (:id 0 is in :started-tasks)
+    (is (= (handler-fn
+             {:db {:p {:seen-events #{:1}
+                       :started-tasks #{0}}}}
+             [:test-id [:1]])
+           {:db {:p {:seen-events #{:1} :started-tasks #{0}}}}))
+
+    ;; event should cause new formard
+    #_(is (= (handler-fn
+             {:db {:p {:seen-events #{}
+                       :started-tasks #{}}}}
+             [:test-id [:1]])
+           {:db {:p {:seen-events #{:1} :started-tasks #{0}}}
+            :dispatch (list [:2])}))))
+
+
+(deftest test-halt1
+  (let [flow {:first-dispatch [:1]
+              :rules []}
+        handler-fn   (core/make-flow-event-handler flow)]
+    (is (= (handler-fn {:db {}} :halt)
            {:db {}
             :deregister-event-handler core/default-id
             :event-forwarder {:unregister core/default-id}}))))
 
-(deftest test-make-flow-handler-halt
-  (let [flow   {:first-dispatch [:1]
-                :rules [
-                        {:when :seen? :events :1 :dispatch [:2]}
-                        {:when :seen? :events :3 :dispatch :halt}]}
-        handler   (core/make-flow-event-handler flow)]
-    (is (= (handler {:db {}} :halt)
-           {:db {}
-            :deregister-event-handler core/default-id
-            :event-forwarder {:unregister core/default-id}}))))
+#_(deftest test-halt2
+    (let [flow {:id  :blah
+                :db-path [:p]
+                :first-dispatch [:1]
+                :rules []}
+          handler-fn   (core/make-flow-event-handler flow)]
+      (is (= (handler-fn {:db {:p {:seen-events #{:33} :started-tasks #{}}}} :halt)
+             {:db {}
+              :deregister-event-handler :blah
+              :event-forwarder {:unregister :blah}}))))
