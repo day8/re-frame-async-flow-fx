@@ -71,8 +71,8 @@ to everything that follows.
    :rules [
      {:when :seen? :events :success-X  :dispatch [:do-Y]}
      {:when :seen? :events :success-Y  :dispatch [:do-Z]}
-     {:when :seen? :events :success-Z  :dispatch :halt}
-     {:when :seen-any-of? :events [:fail-X :fail-Y :fail-Z] :dispatch  (list [:fail-boot] :halt)}]})
+     {:when :seen? :events :success-Z  :dispatch :halt-flow}
+     {:when :seen-any-of? :events [:fail-X :fail-Y :fail-Z] :dispatch  (list [:fail-boot] :halt-flow)}]})
 ```
 We hope that you can almost read the `rules` as English sentences to understand what's being specified. Suffice 
 it to say the simple flow above says to run tasks X, Y and Z serially, like dominoes. More complicated 
@@ -252,8 +252,8 @@ Collectively, a set of When-E1-then-E2 rules can describe the entire async boot 
 Here's how that might look in data:
 ```clj
 [{:when :seen?        :events :success-db-connect   :dispatch (list [:do-query-user] [:do-query-site-prefs])}
- {:when :seen-both?   :events [:success-user-query :success-site-prefs-query]   :dispatch (list [:success-boot] :halt)}
- {:when :seen-any-of? :events [:fail-user-query :fail-site-prefs-query :fail-db-connect] :dispatch  (list [:fail-boot] :halt)}
+ {:when :seen-both?   :events [:success-user-query :success-site-prefs-query]   :dispatch (list [:success-boot] :halt-flow)}
+ {:when :seen-any-of? :events [:fail-user-query :fail-site-prefs-query :fail-db-connect] :dispatch  (list [:fail-boot] :halt-flow)}
  {:when :seen?        :events :success-user-query   :dispatch [:do-intercom]}]
 ```
 
@@ -264,7 +264,7 @@ The structure of each rule (map) is:
 ```clj
 {:when     X      ;; one of:  :seen?, :seen-all-of?, :seen-any-off? 
  :events   Y      ;; either a single keyword or a seq of keywords representing event ids
- :dispatch Z}     ;; either a single vector (to dispatch) or a list of vectors (to dispatch). :halt is special
+ :dispatch Z}     ;; either a single vector (to dispatch) or a list of vectors (to dispatch). :halt-flow is special
 ```
 
 In our mythical app, we can't issue a database query until we have a database connection, so the 1st rule (above) says:
@@ -273,12 +273,12 @@ In our mythical app, we can't issue a database query until we have a database co
   
 We have successfully booted when both database queries succeed, so the 2nd rule says:
   1. When both success events have been seen (they may arrive in any order),  
-  2. then `(dispatch [:success-queries])` and cleanup because the boot process is `:halt`.
+  2. then `(dispatch [:success-queries])` and cleanup because the boot process is `:halt-flow`.
   
 If any task fails, then the boot fails, and the app can't start which means go into a 
 failure mode, so the 3rd rules says:
   1.  If any one of the various tasks fail...
-  2.  then `(dispatch [:fail-boot])` and cleanup because the boot process is `:halt`. 
+  2.  then `(dispatch [:fail-boot])` and cleanup because the boot process is `:halt-flow`. 
  
 Once we have user data (from the user-query), we can start the intercom process, so the 4th rules days:
   1. When `:success-user-query` is dispatched 
@@ -298,7 +298,7 @@ Further Notes:
    are named as follows: `:do-*` is for starting tasks. Task completion is either `:success-*`
    or `:fail-*`
 
-4. The special `:dispatch` value of `:halt` means the boot flow is completed.  Clean up the flow coordinator. 
+4. The special `:dispatch` value of `:halt-flow` means the boot flow is completed.  Clean up the flow coordinator. 
    It will have some state somewhere. So get rid of that.  And it will have been "sniffing events", 
    so stop doing that too.
    
@@ -336,7 +336,7 @@ A `rule` is a map with the following 3 fields:
   - `:events` either a single keyword, or a seq of keywords, presumably event ids
   - `:dispatch` can be a single vector representing one event to dispatch, 
      or a list of vectors representing multiple events to `dispatch`  
-     The special value `:halt` can be supplied in place of an event vector, and it 
+     The special value `:halt-flow` can be supplied in place of an event vector, and it 
      means to teardown the flow. 
 
 
@@ -356,7 +356,7 @@ How does async-flow work? It does the following:
      maintains to work out how it should 
      respond to each newly forwarded event. 
   6. At some point, the flow finishes (failed or succeeded) and the event handler from step 1
-     is dispatched a `:halt`. It de-registeres itself, and stops all event sniffing. 
+     is dispatched a `:halt-flow`. It de-registeres itself, and stops all event sniffing. 
 
 
 Notes:

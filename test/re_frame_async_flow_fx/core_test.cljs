@@ -39,18 +39,18 @@
   (is (= (core/massage-rules :my-id [{:when :seen? :events :1 :dispatch [:2]}])
          (list {:id 0 :when core/all-events-seen? :events #{:1} :dispatch (list [:2])})))
 
-  (is (= (core/massage-rules :my-id [{:when :seen-both? :events [:1 :2] :dispatch :halt}])
-         (list {:id 0 :when core/all-events-seen? :events #{:1 :2} :dispatch (list [:my-id :halt])})))
+  (is (= (core/massage-rules :my-id [{:when :seen-both? :events [:1 :2] :dispatch :halt-flow}])
+         (list {:id 0 :when core/all-events-seen? :events #{:1 :2} :dispatch (list [:my-id :halt-flow])})))
 
-  (is (= (core/massage-rules :my-id [{:when :any-events-seen? :events #{:1 :2} :dispatch (list [:2] :halt)}])
-         (list {:id 0 :when core/any-events-seen? :events #{:1 :2} :dispatch (list [:2] [:my-id :halt])}))))
+  (is (= (core/massage-rules :my-id [{:when :any-events-seen? :events #{:1 :2} :dispatch (list [:2] :halt-flow)}])
+         (list {:id 0 :when core/any-events-seen? :events #{:1 :2} :dispatch (list [:2] [:my-id :halt-flow])}))))
 
 
 (deftest test-steup
   (let [flow {:first-dispatch [:1]
               :rules [
                       {:when :seen? :events :1 :dispatch [:2]}
-                      {:when :seen? :events :3 :dispatch :halt}]}
+                      {:when :seen? :events :3 :dispatch :halt-flow}]}
         handler-fn   (core/make-flow-event-handler flow)]
     (is (= (handler-fn {:db {}} :setup)
            {:db {}
@@ -64,7 +64,7 @@
               :id             :test-id
               :db-path        [:p]
               :rules [{:id 0 :when :seen? :events :1 :dispatch [:2]}
-                      {:id 1 :when :seen? :events :3 :dispatch :halt}]}
+                      {:id 1 :when :seen? :events :3 :dispatch :halt-flow}]}
         handler-fn  (core/make-flow-event-handler flow)]
 
     ;; event :no should cause nothing to happen
@@ -95,7 +95,7 @@
   (let [flow {:first-dispatch [:1]
               :rules []}
         handler-fn   (core/make-flow-event-handler flow)]
-    (is (= (handler-fn {:db {}} :halt)
+    (is (= (handler-fn {:db {}} :halt-flow)
            {:db {}
             :deregister-event-handler core/default-id
             :event-forwarder {:unregister core/default-id}}))))
@@ -106,7 +106,7 @@
                 :first-dispatch [:1]
                 :rules []}
           handler-fn   (core/make-flow-event-handler flow)]
-      (is (= (handler-fn {:db {:p {:seen-events #{:33} :started-tasks #{}}}} :halt)
+      (is (= (handler-fn {:db {:p {:seen-events #{:33} :started-tasks #{}}}} :halt-flow)
              {:db {}
               :deregister-event-handler :blah
               :event-forwarder {:unregister :blah}}))))

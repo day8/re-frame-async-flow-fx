@@ -25,11 +25,11 @@
 (defn massage-rules
   "Massage the supplied rules as follows:
     - replace `:when` keyword value with a function implementing the predicate
-    - ensure that `:dispatch` is always a list (even of one item) and transform `:halt` into an event.
+    - ensure that `:dispatch` is always a list (even of one item) and transform `:halt-flow` into an event.
     - turn :events into a set
     - add a unique :id, if one not already present"
   [flow-id rules]
-  (let [halt-event  [flow-id :halt]
+  (let [halt-event  [flow-id :halt-flow]
         when->fn {:seen?            all-events-seen?
                   :seen-both?       all-events-seen?
                   :all-events-seen? all-events-seen?
@@ -43,8 +43,8 @@
                            :events    (if (coll? events) (set events) #{events})
                            :dispatch  (cond
                                         (vector? dispatch)  (list dispatch)
-                                        (coll? dispatch)    (map (fn [d] (if (= d :halt) halt-event d)) dispatch)
-                                        (= :halt dispatch)  (list halt-event)
+                                        (coll? dispatch)    (map (fn [d] (if (= d :halt-flow) halt-event d)) dispatch)
+                                        (= :halt-flow dispatch)  (list halt-event)
                                         :else  (js/console.error "aync-flow: dispatch value not valid: " dispatch))}))))))
 
 
@@ -76,7 +76,7 @@
     ;; Return an event handler which will manage the flow.
     ;; This event handler will receive 3 kinds of events:
     ;;   (dispatch [:id :setup])
-    ;;   (dispatch [:id :halt])
+    ;;   (dispatch [:id :halt-flow])
     ;;   (dispatch [:id [:forwarded :event :vector]])
     ;;
     ;; This event handler returns a map of effects.
@@ -99,7 +99,7 @@
               ;;   1. remove this event handler
               ;;   2. remove any state stored in app-db
               ;;   3. deregister the events forwarder
-              :halt {:db (dissoc db db-path)
+              :halt-flow {:db (dissoc db db-path)
                      :event-forwarder {:unregister id}
                      :deregister-event-handler id}
 
