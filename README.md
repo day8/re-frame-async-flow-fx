@@ -72,7 +72,7 @@ to everything that follows.
      {:when :seen? :events :success-X  :dispatch [:do-Y]}
      {:when :seen? :events :success-Y  :dispatch [:do-Z]}
      {:when :seen? :events :success-Z  :dispatch :halt-flow}
-     {:when :seen-any-of? :events [:fail-X :fail-Y :fail-Z] :dispatch  (list [:fail-boot] :halt-flow)}]})
+     {:when :seen-any-of? :events [:fail-X :fail-Y :fail-Z] :dispatch  (list [:app-failed-state] :halt-flow)}]})
 ```
 We hope that you can almost read the `rules` as English sentences to understand what's being specified. Suffice 
 it to say the simple flow above says to run tasks X, Y and Z serially, like dominoes. More complicated 
