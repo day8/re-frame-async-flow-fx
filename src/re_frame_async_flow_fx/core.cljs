@@ -84,38 +84,38 @@
     (fn async-flow-event-hander
       [{:keys [db]} event-v]
 
-        (condp = event-v
-              ;; Setup this flow coordinator:
-              ;;   1. Establish initial state - :seen-events and :started-tasks are made empty sets
-              ;;   2. dispatch the first event, to kick start flow
-              ;;   3. arrange for the events to be forwarded to this handler
-              :setup {:db (set-state db #{} #{})
-                      :dispatch first-dispatch
-                      :event-forwarder {:register    id
-                                        :events      (apply set/union (map :events rules))
-                                        :dispatch-to [id]}}
+      (condp = event-v
+        ;; Setup this flow coordinator:
+        ;;   1. Establish initial state - :seen-events and :started-tasks are made empty sets
+        ;;   2. dispatch the first event, to kick start flow
+        ;;   3. arrange for the events to be forwarded to this handler
+        :setup {:db (set-state db #{} #{})
+                :dispatch first-dispatch
+                :event-forwarder {:register    id
+                                  :events      (apply set/union (map :events rules))
+                                  :dispatch-to [id]}}
 
-              ;; Teardown this flow coordinator:
-              ;;   1. remove this event handler
-              ;;   2. remove any state stored in app-db
-              ;;   3. deregister the events forwarder
-              :halt-flow {:db (dissoc db db-path)
-                     :event-forwarder {:unregister id}
-                     :deregister-event-handler id}
+        ;; Teardown this flow coordinator:
+        ;;   1. remove this event handler
+        ;;   2. remove any state stored in app-db
+        ;;   3. deregister the events forwarder
+        :halt-flow {:db (dissoc db db-path)  ;; Aggh. I need dissoc-in to make this work.
+                    :event-forwarder {:unregister id}
+                    :deregister-event-handler id}
 
-              ;; Here we are managig the flow.
-              ;; A new event has been forwarded to this handler. What does it mean?
-              ;;  1. does this new event mean we need to dispatch another?
-              ;;  2. remember this event has happened
-              (let [[_ [forwarded-event-id & args]] event-v
-                    {:keys [seen-events started-tasks]} (get-state db)
-                    new-seen-events    (conj seen-events forwarded-event-id)
-                    ready-tasks        (newly-startable-tasks rules new-seen-events started-tasks)
-                    ready-task-ids     (->> ready-tasks (map :id) set)
-                    new-started-tasks  (set/union started-tasks ready-task-ids)]
-                (merge
-                    {:db       (set-state db new-seen-events new-started-tasks)}
-                    (when (seq ready-tasks) {:dispatch (mapcat :dispatch ready-tasks)})))))))
+        ;; Here we are managig the flow.
+        ;; A new event has been forwarded to this handler. What does it mean?
+        ;;  1. does this new event mean we need to dispatch another?
+        ;;  2. remember this event has happened
+        (let [[_ [forwarded-event-id & args]] event-v
+              {:keys [seen-events started-tasks]} (get-state db)
+              new-seen-events    (conj seen-events forwarded-event-id)
+              ready-tasks        (newly-startable-tasks rules new-seen-events started-tasks)
+              ready-task-ids     (->> ready-tasks (map :id) set)
+              new-started-tasks  (set/union started-tasks ready-task-ids)]
+          (merge
+            {:db       (set-state db new-seen-events new-started-tasks)}
+            (when (seq ready-tasks) {:dispatch (mapcat :dispatch ready-tasks)})))))))
 
 
 ;; -- Register effects handler with re-frame
