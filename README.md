@@ -10,7 +10,7 @@
 
 ## Async Control Flow In re-frame  
 
-Herein a re-frame effects handler, named `:async-flow`, 
+Herein a re-frame ["effects handler"](https://github.com/Day8/re-frame/wiki/Effectful-Event-Handlers), keyed `:async-flow`, 
 which wrangles async tasks.
 
 It is particularly useful for managing control flow at app boot time.
@@ -74,9 +74,9 @@ to everything that follows.
      {:when :seen? :events :success-Z  :dispatch :halt}
      {:when :seen-any-of? :events [:fail-X :fail-Y :fail-Z] :dispatch  (list [:fail-boot] :halt)}]})
 ```
-You can almost read the `rules` as English sentences to understand what's being specified. Suffice 
-it to say that tasks X, Y and Z will be run serially like dominoes. Much more complicated 
-scenarios are possible. Full particulars of this data structure are given in the Tutorial (below).
+We hope that you can almost read the `rules` as English sentences to understand what's being specified. Suffice 
+it to say the simple flow above says to run tasks X, Y and Z serially, like dominoes. More complicated 
+scenarios are possible. Full particulars of this data structure are given below.
  
 **Third**, write the event handler for `:boot`:
 
