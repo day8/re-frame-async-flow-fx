@@ -121,7 +121,7 @@
 ;; -- Register effects handler with re-frame
 
 (re-frame/def-fx
-  :aync-flow
+  :async-flow
   (fn [{:as flow :keys [id]}]
     (re-frame/def-event-fx
       (or id default-id)                                 ;; add debug middleware if dp-patth set ???  XXX
