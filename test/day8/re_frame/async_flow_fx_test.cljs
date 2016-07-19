@@ -1,4 +1,4 @@
-(ns day8.re-frame.async-flow-fx.core-test
+(ns day8.re-frame.async-flow-fx.async-flow-fx-test
   (:require [cljs.test :refer-macros [is deftest]]
             [day8.re-frame.async-flow-fx :as core]))
 
