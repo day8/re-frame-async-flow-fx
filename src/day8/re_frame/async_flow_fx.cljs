@@ -1,5 +1,5 @@
-(ns re-frame-async-flow-fx.core
-  (:require [re-frame.core]
+(ns day8.re-frame.async-flow-fx
+  (:require [re-frame.core :as re-frame]
             [clojure.set :as set]))
 
 (def default-id  :async/flow)
@@ -45,7 +45,7 @@
                                         (vector? dispatch)  (list dispatch)
                                         (coll? dispatch)    (map (fn [d] (if (= d :halt-flow) halt-event d)) dispatch)
                                         (= :halt-flow dispatch)  (list halt-event)
-                                        :else  (js/console.error "aync-flow: dispatch value not valid: " dispatch))}))))))
+                                        :else  (re-frame/console :error "aync-flow: dispatch value not valid: " dispatch))}))))))
 
 
 ;; -- Create Event Handler
@@ -120,12 +120,12 @@
 
 ;; -- Register effects handler with re-frame
 
-(re-frame.core/def-fx
+(re-frame/def-fx
   :aync-flow
   (fn [{:as flow :keys [id]}]
-    (re-frame.core/def-event-fx
+    (re-frame/def-event-fx
       (or id default-id)                                 ;; add debug middleware if dp-patth set ???  XXX
       (make-flow-event-handler flow))
-    (re-frame.core/dispatch [id :steup])))
+    (re-frame/dispatch [id :steup])))
 
 

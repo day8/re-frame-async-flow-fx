@@ -53,7 +53,7 @@ In the namespace where you register your event handlers, perhaps called `events.
 (ns app.events
   (:require 
     ...
-    [re-frame-async-flow-fx]   ;; <-- add this
+    [day8.re-frame.async-flow-fx]   ;; <-- add this
     ...))
 ```
 
@@ -262,7 +262,7 @@ line as if it was an English sentence and something like this should emerge: `wh
 
 The structure of each rule (map) is: 
 ```clj
-{:when     X      ;; one of:  :seen?, :seen-all-of?, :seen-any-off? 
+{:when     X      ;; one of:  :seen?, :seen-both?, :seen-all-of?, :seen-any-off? 
  :events   Y      ;; either a single keyword or a seq of keywords representing event ids
  :dispatch Z}     ;; either a single vector (to dispatch) or a list of vectors (to dispatch). :halt-flow is special
 ```
@@ -308,7 +308,7 @@ Further Notes:
 6. There will need to be something that kicks off the whole flow. In the case above, presumably 
    a `(dispatch [:do-connect-db])` is how it all starts.
 
-7. A word on Retries XXXX
+7. A word on Retries.  XXXX
 
 ### The Flow Specification 
 

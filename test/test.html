@@ -45,7 +45,7 @@
     <script>
         // This loop is where a lot of important work happens
         // It will inject both the unit tests and code-to-be-tested into the page
-        //find out what requires cljs.core
+        //find out what requires cljs.day8.re-frame.async-flow-fx
         // reverse nameToPath
         var pathToName = {};
         for (var key in goog.dependencies_.nameToPath) {
@@ -117,8 +117,8 @@
         // Run Tests
         //
         function run_tests() {
-            re_frame_async_flow_fx.test_runner.set_print_fn_BANG_(testPrintLn);
-            re_frame_async_flow_fx.test_runner.run_html_tests();
+            day8.re_frame.async_flow_fx.test_runner.set_print_fn_BANG_(testPrintLn);
+            day8.re_frame.async_flow_fx.test_runner.run_html_tests();
         }
 
         // Don't run any tests till this page is fully loaded.

@@ -1,6 +1,6 @@
-(ns re-frame-async-flow-fx.core-test
+(ns day8.re-frame.async-flow-fx.core-test
   (:require [cljs.test :refer-macros [is deftest]]
-            [re-frame-async-flow-fx.core :as core]))
+            [day8.re-frame.async-flow-fx :as core]))
 
 (deftest test-all-events-seen?
   (is (= (core/seen-all-of? #{:a} #{:a}) true))
