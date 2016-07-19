@@ -1,6 +1,6 @@
 > Status:  still under development. Don't use yet.
 
-[![Clojars Project](https://img.shields.io/clojars/v/re-frame-async-flow-fx/latest-version.svg)](https://clojars.org/re-frame-async-flow-fx)
+[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/async-flow-fx.svg)](https://clojars.org/day8.re-frame/async-flow-fx)
 [![GitHub license](https://img.shields.io/github/license/Day8/re-frame-async-flow-fx.svg)](license.txt)
 [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)
 [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop)
