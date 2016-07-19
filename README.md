@@ -1,4 +1,4 @@
-> Status:  still under development. Don't use yet.
+> Status: requires re-frame >= v0.8.0-alpha2
 
 [![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/async-flow-fx.svg)](https://clojars.org/day8.re-frame/async-flow-fx)
 [![GitHub license](https://img.shields.io/github/license/Day8/re-frame-async-flow-fx.svg)](license.txt)
