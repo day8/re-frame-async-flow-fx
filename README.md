@@ -20,7 +20,7 @@ It is particularly useful for managing control flow at app boot time.
 ### Step 1. Add Dependency
  
 Add the following project dependency:  
-[![Clojars Project](https://img.shields.io/clojars/v/re-frame-async-flow-fx/latest-version.svg)](https://clojars.org/re-frame-async-flow-fx)
+[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/async-flow-fx.svg)](https://clojars.org/day8.re-frame/async-flow-fx)
 
 
 ### Step 2. Initiate Boot
