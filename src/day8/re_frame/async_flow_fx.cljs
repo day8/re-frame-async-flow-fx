@@ -84,7 +84,7 @@
     (fn async-flow-event-hander
       [{:keys [db]} event-v]
 
-      (condp = event-v
+      (condp = (second event-v)
         ;; Setup this flow coordinator:
         ;;   1. Establish initial state - :seen-events and :started-tasks are made empty sets
         ;;   2. dispatch the first event, to kick start flow

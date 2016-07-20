@@ -52,7 +52,7 @@
                       {:when :seen? :events :1 :dispatch [:2]}
                       {:when :seen? :events :3 :dispatch :halt-flow}]}
         handler-fn   (core/make-flow-event-handler flow)]
-    (is (= (handler-fn {:db {}} :setup)
+    (is (= (handler-fn {:db {}} [:dummy-id :setup])
            {:db {}
             :dispatch [:1]
             :event-forwarder {:register core/default-id
@@ -112,7 +112,7 @@
   (let [flow {:first-dispatch [:1]
               :rules []}
         handler-fn   (core/make-flow-event-handler flow)]
-    (is (= (handler-fn {:db {}} :halt-flow)
+    (is (= (handler-fn {:db {}} [:dummy-id :halt-flow])
            { ;; :db {}
             :deregister-event-handler core/default-id
             :event-forwarder {:unregister core/default-id}}))))
