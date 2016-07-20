@@ -53,10 +53,10 @@
                       {:when :seen? :events :3 :dispatch :halt-flow}]}
         handler-fn   (core/make-flow-event-handler flow)]
     (is (= (handler-fn {:db {}} [:dummy-id :setup])
-           {:db {}
-            :dispatch [:1]
-            :event-forwarder {:register core/default-id
-                              :events #{:1 :3}
+           {:db             {}
+            :dispatch       [:1]
+            :forward-events {:register     core/default-id
+                              :events      #{:1 :3}
                               :dispatch-to [core/default-id]}}))))
 
 (deftest test-forwarding
@@ -115,7 +115,7 @@
     (is (= (handler-fn {:db {}} [:dummy-id :halt-flow])
            { ;; :db {}
             :deregister-event-handler core/default-id
-            :event-forwarder {:unregister core/default-id}}))))
+            :forward-events           {:unregister core/default-id}}))))
 
 
 ;; Aggh. I don't have dissoc-in available to make this work.
@@ -126,6 +126,6 @@
                 :rules []}
           handler-fn   (core/make-flow-event-handler flow)]
       (is (= (handler-fn {:db {:p {:seen-events #{:33} :started-tasks #{}}}} :halt-flow)
-             {:db {}
+             {:db                       {}
               :deregister-event-handler :blah
-              :event-forwarder {:unregister :blah}}))))
+              :forward-events           {:unregister :blah}}))))

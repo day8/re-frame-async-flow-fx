@@ -1,6 +1,8 @@
 (ns day8.re-frame.async-flow-fx
-  (:require [re-frame.core :as re-frame]
-            [clojure.set :as set]))
+  (:require
+    [re-frame.core :as re-frame]
+    [clojure.set :as set]
+    [day8.re-frame.forward-events-fx]))
 
 (def default-id  :async/flow)
 
@@ -89,9 +91,9 @@
         ;;   1. Establish initial state - :seen-events and :started-tasks are made empty sets
         ;;   2. dispatch the first event, to kick start flow
         ;;   3. arrange for the events to be forwarded to this handler
-        :setup {:db (set-state db #{} #{})
-                :dispatch first-dispatch
-                :event-forwarder {:register    id
+        :setup {:db             (set-state db #{} #{})
+                :dispatch       first-dispatch
+                :forward-events {:register     id
                                   :events      (apply set/union (map :events rules))
                                   :dispatch-to [id]}}
 
@@ -100,7 +102,7 @@
         ;;   2. remove any state stored in app-db
         ;;   3. deregister the events forwarder
         :halt-flow {;; :db (dissoc db db-path)  ;; Aggh. I need dissoc-in to make this work.
-                    :event-forwarder {:unregister id}
+                    :forward-events           {:unregister id}
                     :deregister-event-handler id}
 
         ;; Here we are managig the flow.
