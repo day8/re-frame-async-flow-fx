@@ -159,7 +159,7 @@ state machine complexity.
 
 #### Failures
 
-There'll also be failures and errors!
+There will also be failures and errors!
 
 Nothing messes up tight, elegant code quite like error 
 handling.  Did the Ancient Greeks have a terrifying Titan for the unhappy
@@ -229,12 +229,12 @@ But, here, none of that menial labour concerns us. We care only about the **coor
 tasks. We care only that task2 is started when task1 finishes successfully, and we don't need 
 to know what task1 or task2 actually do.
  
-To distill that: we care only that the `dispatch` to start task2 is fired correctly when we
+To distil that: we care only that the `dispatch` to start task2 is fired correctly when we
 have seen an event saying that task1 finished successfully.
  
 ### When-E1-Then-E2
   
-Read that last paragraph again.  It distills further to: when event E1 happens then `dispatch` event E2.  Or, more pithily again, When-E1-Then-E2. 
+Read that last paragraph again.  It distils further to: when event E1 happens then `dispatch` event E2.  Or, more pithily again, When-E1-Then-E2. 
   
 When-E1-Then-E2 is the simple case, with more complicated variations like:
   - when **both** events E1 and E2 have happened, then dispatch E3
@@ -354,7 +354,7 @@ How does async-flow work? It does the following:
      maintains to work out how it should 
      respond to each newly forwarded event. 
   6. At some point, the flow finishes (failed or succeeded) and the event handler from step 1
-     is dispatched a `:halt-flow`. It de-registeres itself, and stops all event sniffing. 
+     is dispatched a `:halt-flow`. It de-registers itself, and stops all event sniffing. 
 
 
 Notes:
