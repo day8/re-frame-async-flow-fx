@@ -122,10 +122,10 @@
 
 (re-frame/def-fx
   :async-flow
-  (fn [{:as flow :keys [id]}]
+  (fn [{:as flow :keys [id] :or {id default-id}}]
     (re-frame/def-event-fx
-      (or id default-id)                                 ;; add debug middleware if dp-patth set ???  XXX
+      id                                ;; add debug middleware if dp-path set ???  XXX
       (make-flow-event-handler flow))
-    (re-frame/dispatch [id :steup])))
+    (re-frame/dispatch [id :setup])))
 
 
