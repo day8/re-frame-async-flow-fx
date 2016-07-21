@@ -39,10 +39,10 @@
   (is (= (core/massage-rules :my-id [{:when :seen? :events :1 :dispatch [:2]}])
          (list {:id 0 :when core/seen-all-of? :events #{:1} :dispatch (list [:2])})))
 
-  (is (= (core/massage-rules :my-id [{:when :seen-both? :events [:1 :2] :dispatch :halt-flow}])
+  (is (= (core/massage-rules :my-id [{:when :seen-both? :events [:1 :2] :halt? true}])
          (list {:id 0 :when core/seen-all-of? :events #{:1 :2} :dispatch (list [:my-id :halt-flow])})))
 
-  (is (= (core/massage-rules :my-id [{:when :seen-any-of? :events #{:1 :2} :dispatch (list [:2] :halt-flow)}])
+  (is (= (core/massage-rules :my-id [{:when :seen-any-of? :events #{:1 :2} :dispatch [:2] :halt? true}])
          (list {:id 0 :when core/seen-any-of? :events #{:1 :2} :dispatch (list [:2] [:my-id :halt-flow])}))))
 
 
@@ -64,7 +64,7 @@
               :id             :test-id
               :db-path        [:p]
               :rules [{:id 0 :when :seen? :events :1 :dispatch [:2]}
-                      {:id 1 :when :seen? :events :3 :dispatch :halt-flow}
+                      {:id 1 :when :seen? :events :3 :halt? true}
                       {:id 2 :when :seen-any-of? :events [:4 :5] :dispatch [:6]}]}
         handler-fn  (core/make-flow-event-handler flow)]
 

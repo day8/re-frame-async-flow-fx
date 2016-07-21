@@ -27,27 +27,30 @@
 (defn massage-rules
   "Massage the supplied rules as follows:
     - replace `:when` keyword value with a function implementing the predicate
-    - ensure that `:dispatch` is always a list (even of one item) and transform `:halt-flow` into an event.
-    - turn :events into a set
+    - ensure that `:dispatch` is always a list (even of one item)
     - add a unique :id, if one not already present"
   [flow-id rules]
   (let [halt-event  [flow-id :halt-flow]
         when->fn {:seen?        seen-all-of?
                   :seen-both?   seen-all-of?
                   :seen-all-of? seen-all-of?
-                  :seen-any-of? seen-any-of?}]
+                  :seen-any-of? seen-any-of?}
+        add-halt (fn [tasks halt?]
+                   ; when rule represents stop, add `:halt-flow` as last event
+                   (if halt? (concat tasks [halt-event]) tasks))]
     (->> rules
-         (map-indexed (fn [index {:keys [id when events dispatch]}]
+         (map-indexed (fn [index {:keys [id when events dispatch halt?]
+                                  :or   {dispatch '()}}]
                         (let [when-as-fn  (when->fn when)
                               _  (assert (some? when-as-fn) (str "aync-flow: found bad value for :when: " when))]
                           {:id        (or id index)
                            :when      when-as-fn
                            :events    (if (coll? events) (set events) #{events})
-                           :dispatch  (cond
-                                        (vector? dispatch)  (list dispatch)
-                                        (coll? dispatch)    (map (fn [d] (if (= d :halt-flow) halt-event d)) dispatch)
-                                        (= :halt-flow dispatch)  (list halt-event)
-                                        :else  (re-frame/console :error "aync-flow: dispatch value not valid: " dispatch))}))))))
+                           :dispatch  (some-> (cond
+                                                (vector? dispatch) (list dispatch)
+                                                (seq? dispatch)    dispatch
+                                                :else  (re-frame/console :error "async-flow: dispatch value not valid: " dispatch))
+                                              (add-halt halt?))}))))))
 
 
 ;; -- Create Event Handler
@@ -55,8 +58,7 @@
 (defn make-flow-event-handler
   "given a flow definitiion, returns an event handler which implements this definition"
   [{:keys [id db-path rules first-dispatch]}]
-  (let [id  (or id default-id)
-
+  (let [id          (or id default-id)
         ;; Subject to db-path, state is either stored in app-db or in a local atom
         ;; Two pieces of state are maintained:
         ;;  - the set of seen events
@@ -71,9 +73,9 @@
                         db))
         get-state   (if db-path
                       (fn [db] (get-in db db-path))
-                      (fn [_]  @local-store))
+                      (fn [_] @local-store))
 
-        rules  (massage-rules id rules)]       ;; all of the events refered to in the rules
+        rules       (massage-rules id rules)]       ;; all of the events refered to in the rules
 
     ;; Return an event handler which will manage the flow.
     ;; This event handler will receive 3 kinds of events:
@@ -93,9 +95,9 @@
         ;;   3. arrange for the events to be forwarded to this handler
         :setup {:db             (set-state db #{} #{})
                 :dispatch       first-dispatch
-                :forward-events {:register     id
-                                  :events      (apply set/union (map :events rules))
-                                  :dispatch-to [id]}}
+                :forward-events {:register    id
+                                 :events      (apply set/union (map :events rules))
+                                 :dispatch-to [id]}}
 
         ;; Teardown this flow coordinator:
         ;;   1. remove this event handler
@@ -128,6 +130,7 @@
     (re-frame/def-event-fx
       id                                ;; add debug middleware if dp-path set ???  XXX
       (make-flow-event-handler flow))
+    (re-frame/console :log "starting async-flow:" id)
     (re-frame/dispatch [id :setup])))
 
 
