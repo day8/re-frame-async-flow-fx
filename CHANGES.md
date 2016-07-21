@@ -1,3 +1,14 @@
+##v0.0.2  (2016.07.XX)##
+
+####clean ups and corrections####
+    - def-fx name typo -> :async-flow
+    - cleanup unit test namespaces
+    - fix def-fx to use default-id
+    - fix bug async-flow-handler
+    - rename effect :event-forwarder -> :forward-events to match [forward-events-fx](https://github.com/Day8/re-frame-forward-events-fx) i.e. :forward-events 
+    - remove special dispatch `:halt-flow` and introduce new optional rule property `:halt? true`
+    - readme updates
+    
 ##v0.0.1  (2016.07.XX)
 
-Initial code drop
+    - initial code drop
