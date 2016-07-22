@@ -263,9 +263,10 @@ The structure of each rule (map) is:
 {:when     X      ;; one of:  :seen?, :seen-both?, :seen-all-of?, :seen-any-off?
  :events   Y      ;; either a single keyword or a seq of keywords representing event ids
  :dispatch Z}     ;; either a single vector (to dispatch) or a list of vectors (to dispatch)
- :halt?    true   ;; optional (default false), will halt and teardown the flow after the last event is dispatched
-flow is special
+ :halt?    true   ;; optional, will teardown the flow after the last event is dispatched
 ```
+flow is special
+
 
 In our mythical app, we can't issue a database query until we have a database connection, so the 1st rule (above) says:
   1. When `:success-db-connect` is dispatched, presumably signalling that we have a database connection...
