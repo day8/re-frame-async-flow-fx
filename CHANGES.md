@@ -7,6 +7,7 @@
     - fix bug async-flow-handler
     - rename effect :event-forwarder -> :forward-events to match [forward-events-fx](https://github.com/Day8/re-frame-forward-events-fx) i.e. :forward-events 
     - remove special dispatch `:halt-flow` and introduce new optional rule property `:halt? true`
+    - rename state :started-tasks -> :rules-fired
     - readme updates
     
 ##v0.0.1  (2016.07.XX)

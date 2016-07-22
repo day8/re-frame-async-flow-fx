@@ -23,15 +23,15 @@
 (deftest test-newly-startable-tasks
   (let [rules [{:id 1 :when core/seen-all-of?  :events #{:a :b}}
                {:id 2 :when core/seen-all-of?  :events #{:a}}]]
-  (is (= (core/newly-startable-tasks rules #{:c}  #{})
+  (is (= (core/startable-rules rules #{:c} #{})
          []))
-  (is (= (core/newly-startable-tasks rules #{:a}  #{2})
+  (is (= (core/startable-rules rules #{:a} #{2})
          []))
-  (is (= (core/newly-startable-tasks rules #{:a}  #{1})
+  (is (= (core/startable-rules rules #{:a} #{1})
          [(nth rules 1)]))
-  (is (= (core/newly-startable-tasks rules #{:a :b} #{2})
+  (is (= (core/startable-rules rules #{:a :b} #{2})
          [(nth rules 0)]))
-  (is (= (core/newly-startable-tasks rules #{:a}  #{})
+  (is (= (core/startable-rules rules #{:a} #{})
          [(nth rules 1)]))))
 
 
@@ -50,7 +50,7 @@
   (let [flow {:first-dispatch [:1]
               :rules [
                       {:when :seen? :events :1 :dispatch [:2]}
-                      {:when :seen? :events :3 :dispatch :halt-flow}]}
+                      {:when :seen? :events :3 :halt? true}]}
         handler-fn   (core/make-flow-event-handler flow)]
     (is (= (handler-fn {:db {}} [:dummy-id :setup])
            {:db             {}
@@ -71,40 +71,40 @@
     ;; event :no should cause nothing to happen
     (is (= (handler-fn
              {:db {:p {:seen-events #{:33}
-                       :started-tasks #{}}}}
+                       :rules-fired #{}}}}
              [:test-id [:no]])
            {:db {:p {:seen-events #{:33 :no}
-                     :started-tasks #{}}}}))
+                     :rules-fired #{}}}}))
 
-    ;; new event should not cause a new dispatch because task is already started  (:id 0 is in :started-tasks)
+    ;; new event should not cause a new dispatch because task is already started  (:id 0 is in ::rules-fired)
     (is (= (handler-fn
              {:db {:p {:seen-events #{:1}
-                       :started-tasks #{0}}}}
+                       :rules-fired #{0}}}}
              [:test-id [:1]])
-           {:db {:p {:seen-events #{:1} :started-tasks #{0}}}}))
+           {:db {:p {:seen-events #{:1} :rules-fired #{0}}}}))
 
     ;; new event should cause a dispatch
     (is (= (handler-fn
              {:db {:p {:seen-events #{}
-                       :started-tasks #{}}}}
+                       :rules-fired #{}}}}
              [:test-id [:1]])
-           {:db {:p {:seen-events #{:1} :started-tasks #{0}}}
+           {:db {:p {:seen-events #{:1} :rules-fired #{0}}}
             :dispatch (list [:2])}))
 
     ;; new event should cause a dispatch
     (is (= (handler-fn
              {:db {:p {:seen-events #{:1}
-                       :started-tasks #{0}}}}
+                       :rules-fired #{0}}}}
              [:test-id [:3]])
-           {:db {:p {:seen-events #{:1 :3} :started-tasks #{0 1}}}
+           {:db {:p {:seen-events #{:1 :3} :rules-fired #{0 1}}}
             :dispatch (list [:test-id :halt-flow])}))
 
     ;; make sure :seen-any-of? works
     (is (= (handler-fn
              {:db {:p {:seen-events #{}
-                       :started-tasks #{}}}}
+                       :rules-fired #{}}}}
              [:test-id [:4]])
-           {:db {:p {:seen-events #{:4} :started-tasks #{2}}}
+           {:db {:p {:seen-events #{:4} :rules-fired #{2}}}
             :dispatch (list [:6])}))))
 
 
@@ -125,7 +125,7 @@
                 :first-dispatch [:1]
                 :rules []}
           handler-fn   (core/make-flow-event-handler flow)]
-      (is (= (handler-fn {:db {:p {:seen-events #{:33} :started-tasks #{}}}} :halt-flow)
+      (is (= (handler-fn {:db {:p {:seen-events #{:33} :rules-fired #{}}}} :halt-flow)
              {:db                       {}
               :deregister-event-handler :blah
               :forward-events           {:unregister :blah}}))))

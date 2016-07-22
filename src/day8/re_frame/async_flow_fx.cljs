@@ -16,11 +16,11 @@
   (some? (seq (set/intersection seen-events required-events))))
 
 
-(defn newly-startable-tasks
-  "Given the accumulated set of seen events and the set of tasks already started,
-  return the list of tasks which should now be started"
-  [rules now-seen-events already-started-tasks]
-  (->> (remove (comp already-started-tasks :id) rules)
+(defn startable-rules
+  "Given the accumulated set of seen events and the set of rules already started,
+  return the list of rules which should now be started"
+  [rules now-seen-events rules-fired]
+  (->> (remove (comp rules-fired :id) rules)
        (filterv (fn [task] ((:when task) (:events task) now-seen-events)))))
 
 
@@ -67,9 +67,9 @@
         local-store (atom {})
         set-state   (if db-path
                       (fn [db seen started]
-                        (assoc-in db db-path {:seen-events seen :started-tasks started}))
+                        (assoc-in db db-path {:seen-events seen :rules-fired started}))
                       (fn [db seen started]
-                        (reset! local-store {:seen-events seen :started-tasks started})
+                        (reset! local-store {:seen-events seen :rules-fired started})
                         db))
         get-state   (if db-path
                       (fn [db] (get-in db db-path))
@@ -90,7 +90,7 @@
 
       (condp = (second event-v)
         ;; Setup this flow coordinator:
-        ;;   1. Establish initial state - :seen-events and :started-tasks are made empty sets
+        ;;   1. Establish initial state - :seen-events and ::rules-fired are made empty sets
         ;;   2. dispatch the first event, to kick start flow
         ;;   3. arrange for the events to be forwarded to this handler
         :setup {:db             (set-state db #{} #{})
@@ -112,14 +112,14 @@
         ;;  1. does this new event mean we need to dispatch another?
         ;;  2. remember this event has happened
         (let [[_ [forwarded-event-id & args]] event-v
-              {:keys [seen-events started-tasks]} (get-state db)
-              new-seen-events    (conj seen-events forwarded-event-id)
-              ready-tasks        (newly-startable-tasks rules new-seen-events started-tasks)
-              ready-task-ids     (->> ready-tasks (map :id) set)
-              new-started-tasks  (set/union started-tasks ready-task-ids)]
+              {:keys [seen-events rules-fired]} (get-state db)
+              new-seen-events (conj seen-events forwarded-event-id)
+              ready-rules     (startable-rules rules new-seen-events rules-fired)
+              ready-rules-ids (->> ready-rules (map :id) set)
+              new-rules-fired (set/union rules-fired ready-rules-ids)]
           (merge
-            {:db       (set-state db new-seen-events new-started-tasks)}
-            (when (seq ready-tasks) {:dispatch (mapcat :dispatch ready-tasks)})))))))
+            {:db       (set-state db new-seen-events new-rules-fired)}
+            (when (seq ready-rules) {:dispatch (mapcat :dispatch ready-rules)})))))))
 
 
 ;; -- Register effects handler with re-frame
