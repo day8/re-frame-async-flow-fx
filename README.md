@@ -1,6 +1,6 @@
 > Status: requires re-frame >= v0.8.0-alpha2
 
-[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/async-flow-fx.svg)](https://clojars.org/day8.re-frame/async-flow-fx)
+
 [![GitHub license](https://img.shields.io/github/license/Day8/re-frame-async-flow-fx.svg)](license.txt)
 [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)
 [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/develop)
@@ -17,7 +17,7 @@ which wrangles async tasks.  It manages control flow at app boot time.
 
 ### Step 1. Add Dependency
 
-Add the following project dependency:
+Add the following project dependency: <br>
 [![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/async-flow-fx.svg)](https://clojars.org/day8.re-frame/async-flow-fx)
 
 
@@ -262,11 +262,9 @@ The structure of each rule (map) is:
 ```clj
 {:when     X      ;; one of:  :seen?, :seen-both?, :seen-all-of?, :seen-any-off?
  :events   Y      ;; either a single keyword or a seq of keywords representing event ids
- :dispatch Z}     ;; either a single vector (to dispatch) or a list of vectors (to dispatch)
- :halt?    true   ;; optional, will teardown the flow after the last event is dispatched
+ :dispatch Z     ;; either a single vector (to dispatch) or a list of vectors (to dispatch)
+ :halt?    true} ;; optional, will teardown the flow after the last event is dispatched
 ```
-flow is special
-
 
 In our mythical app, we can't issue a database query until we have a database connection, so the 1st rule (above) says:
   1. When `:success-db-connect` is dispatched, presumably signalling that we have a database connection...
@@ -303,13 +301,13 @@ Further Notes:
    It will have some state somewhere. So get rid of that.  And it will have been "sniffing events",
    so stop doing that too. You should provide at least one of these in your rules.
 
-5. There's nothing in here about the teardown process as the application is closing. Here's we're only
+5. There's nothing in here about the teardown process as the application is closing. Here we're only
    helping the boot process.
 
 6. There will need to be something that kicks off the whole flow. In the case above, presumably
    a `(dispatch [:do-connect-db])` is how it all starts.
 
-7. A word on Retries.  XXXX
+7. A word on Retries.  XXX
 
 ### The Flow Specification
 
@@ -337,7 +335,7 @@ A `rule` is a map with the following 3 fields:
   - `:events` either a single keyword, or a seq of keywords, presumably event ids
   - `:dispatch` can be a single vector representing one event to dispatch,
      or a list of vectors representing multiple events to `dispatch`
-  - `:halt?` optional boolean, and it means to teardown the after last event in dispatch chain.
+  - `:halt?` optional boolean. If true, the flow enters teardown and stops. 
 
 
 ### Under The Covers
@@ -395,6 +393,6 @@ So we choose data (while being mindful of the takeoffs).
 But it would be quite possible to create a re-frame version of redux-saga.  In ClosureScript
 we have core.async instead of generator functions. That is left as an exercise for the motivated reader.
 
-A motivated user might also produce a full on FSM version of this effects handler.
+A motivated user might also produce a full-on FSM version of this effects handler.
 
 
