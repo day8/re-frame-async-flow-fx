@@ -1,4 +1,7 @@
-> Status: requires re-frame >= v0.8.0-alpha2
+> 
+> Status: freshly minted, but seems to work!!
+> Requires re-frame >= v0.8.0-alpha3
+>
 
 
 [![GitHub license](https://img.shields.io/github/license/Day8/re-frame-async-flow-fx.svg)](license.txt)
@@ -85,7 +88,7 @@ This event handler will do two things:
   2. It kicks off a multistep asynchronous flow
 
 ```clj
-(def-event-fx                    ;; note the -fx
+(reg-event-fx                    ;; note the -fx
   :boot                          ;; usage:  (dispatch [:boot])  See step 3
   (fn [_ _]
     {:db (-> {}                  ;;  do whatever synchronous work needs to be done
@@ -118,7 +121,7 @@ If the tasks are all synchronous, then the coordination can be done in code.
 Each task is a function, and we satisfy the task dependencies by correctly
 ordering how they are called. In a re-frame context, we'd have this:
 ```clj
-(def-event
+(reg-event
   :boot
   (fn [db]
     (-> {}
