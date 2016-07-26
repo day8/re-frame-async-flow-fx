@@ -124,13 +124,17 @@
 
 ;; -- Register effects handler with re-frame
 
+(defn flow->handler
+  [{:as flow :keys [id] :or {id default-id}}]
+  (re-frame/reg-event-fx
+    id                                ;; add debug middleware if dp-path set ???  XXX
+    (make-flow-event-handler flow))
+  (re-frame/console :log "starting async-flow:" id)
+  (re-frame/dispatch [id :setup]))
+
+
 (re-frame/reg-fx
   :async-flow
-  (fn [{:as flow :keys [id] :or {id default-id}}]
-    (re-frame/reg-event-fx
-      id                                ;; add debug middleware if dp-path set ???  XXX
-      (make-flow-event-handler flow))
-    (re-frame/console :log "starting async-flow:" id)
-    (re-frame/dispatch [id :setup])))
+  flow->handler)
 
 
