@@ -1,5 +1,6 @@
 ##v0.0.5  (2016.07.XX)##
     - allow flow handler to be used from non fx handler via flow->handler
+    - rules can either use :dispatch for one or :dispatch-n for multiple
 
 ##v0.0.2  (2016.07.XX)##
 

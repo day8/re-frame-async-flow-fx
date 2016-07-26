@@ -27,8 +27,9 @@
 (defn massage-rules
   "Massage the supplied rules as follows:
     - replace `:when` keyword value with a function implementing the predicate
-    - ensure that `:dispatch` is always a list (even of one item)
-    - add a unique :id, if one not already present"
+    - ensure that only `:dispatch` or `:dispatch-n` is provided
+    - add a unique :id, if one not already present
+    - add halt event when :halt? present"
   [flow-id rules]
   (let [halt-event  [flow-id :halt-flow]
         when->fn {:seen?        seen-all-of?
@@ -39,18 +40,23 @@
                    ; when rule represents stop, add `:halt-flow` as last event
                    (if halt? (concat tasks [halt-event]) tasks))]
     (->> rules
-         (map-indexed (fn [index {:keys [id when events dispatch halt?]
-                                  :or   {dispatch '()}}]
-                        (let [when-as-fn  (when->fn when)
-                              _  (assert (some? when-as-fn) (str "aync-flow: found bad value for :when: " when))]
-                          {:id        (or id index)
-                           :when      when-as-fn
-                           :events    (if (coll? events) (set events) #{events})
-                           :dispatch  (some-> (cond
-                                                (vector? dispatch) (list dispatch)
-                                                (seq? dispatch)    dispatch
-                                                :else  (re-frame/console :error "async-flow: dispatch value not valid: " dispatch))
-                                              (add-halt halt?))}))))))
+         (map-indexed (fn [index {:keys [id when events dispatch dispatch-n halt?]}]
+                        (let [when-as-fn (when->fn when)
+                              _  (assert (cond [(some? dispatch) (some? dispatch-n)]
+                                               [false false] true ; either or both can be nil
+                                               [true false]  true ; only dispatch provided
+                                               [false true]  true ; only dispatch-n provided
+                                               false) "async-flow: rule can only specify one of :dispatch :dispatch-n")
+                              _  (assert (some? when-as-fn) (str "async-flow: found bad value for :when: " when))
+                              tasks (-> (cond
+                                          dispatch   (list dispatch)
+                                          dispatch-n dispatch-n
+                                          :else      nil)
+                                        (add-halt halt?))]
+                          {:id         (or id index)
+                           :when       when-as-fn
+                           :events     (if (coll? events) (set events) #{events})
+                           :dispatch-n tasks}))))))
 
 
 ;; -- Create Event Handler
@@ -119,7 +125,7 @@
               new-rules-fired (set/union rules-fired ready-rules-ids)]
           (merge
             {:db       (set-state db new-seen-events new-rules-fired)}
-            (when (seq ready-rules) {:dispatch (mapcat :dispatch ready-rules)})))))))
+            (when (seq ready-rules) {:dispatch-n (mapcat :dispatch-n ready-rules)})))))))
 
 
 ;; -- Register effects handler with re-frame

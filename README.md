@@ -252,7 +252,7 @@ Collectively, a set of When-E1-then-E2 rules can describe the entire async boot 
 
 Here's how that might look in data:
 ```clj
-[{:when :seen?        :events :success-db-connect   :dispatch '([:do-query-user] [:do-query-site-prefs])}
+[{:when :seen?        :events :success-db-connect   :dispatch-n '([:do-query-user] [:do-query-site-prefs])}
  {:when :seen-both?   :events [:success-user-query :success-site-prefs-query] :dispatch [:success-boot] :halt? true}
  {:when :seen-any-of? :events [:fail-user-query :fail-site-prefs-query :fail-db-connect] :dispatch [:fail-boot] :halt? true}
  {:when :seen?        :events :success-user-query   :dispatch [:do-intercom]}]
@@ -262,12 +262,15 @@ That's a vector of 4 maps (one per line), where each represents a single rule. T
 line as if it was an English sentence and something like this should emerge: `when we have seen all of events E1 and E2, then dispatch this other event`
 
 The structure of each rule (map) is:
+
 ```clj
-{:when     X      ;; one of:  :seen?, :seen-both?, :seen-all-of?, :seen-any-off?
- :events   Y      ;; either a single keyword or a seq of keywords representing event ids
- :dispatch Z     ;; either a single vector (to dispatch) or a list of vectors (to dispatch)
- :halt?    true} ;; optional, will teardown the flow after the last event is dispatched
+{:when       W     ;; one of:  :seen?, :seen-both?, :seen-all-of?, :seen-any-off?
+ :events     X     ;; either a single keyword or a seq of keywords representing event ids
+ :dispatch   Y     ;; (optional) single vector (to dispatch)
+ :dispatch-n Z     ;; (optional) list of vectors (to dispatch)
+ :halt?    true}   ;; optional, will teardown the flow after the last event is dispatched
 ```
+Although optional, only one of :dispatch or :dispatch-n can be specified
 
 In our mythical app, we can't issue a database query until we have a database connection, so the 1st rule (above) says:
   1. When `:success-db-connect` is dispatched, presumably signalling that we have a database connection...
@@ -331,19 +334,20 @@ The `:async-flow` data structure has the following fields:
     something like the event which will open a websocket or HTTP GET configuration from the server.
   - `rules` - mandatory - a vector of maps. Each map is a `rule`.
 
-A `rule` is a map with the following 3 fields:
+A `rule` is a map with the following fields:
 
   - `:when`  one of `:seen?`, `:seen-both?`. `:seen-all-of?`, `:seen-any-of?`
     `:seen?`, `:seen-both?` and `:seen-all-of?` are interchangeable.
   - `:events` either a single keyword, or a seq of keywords, presumably event ids
-  - `:dispatch` can be a single vector representing one event to dispatch,
-     or a list of vectors representing multiple events to `dispatch`
+  - `:dispatch` can be a single vector representing one event to dispatch.
+  - `:dispatch-n` to dispatch multiple events, must be a coll where each elem represents one event to dispatch.
   - `:halt?` optional boolean. If true, the flow enters teardown and stops. 
 
 
 ### Under The Covers
 
 How does async-flow work? It does the following:
+
   1. It dynamically creates an event handler to perform the flow coordination.
   2. It registers this event handler using the supplied `:id`
   3. It requests that all `:events` mentioned in `flow` rules should be "forwarded" to
