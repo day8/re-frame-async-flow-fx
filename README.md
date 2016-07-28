@@ -1,6 +1,6 @@
 > 
 > Status: freshly minted, but seems to work!!
-> Requires re-frame >= v0.8.0-alpha4
+> Requires re-frame >= v0.8.0-alpha7
 >
 
 
