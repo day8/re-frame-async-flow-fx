@@ -8,7 +8,7 @@
                  [day8.re-frame/forward-events-fx "0.0.4"]]
 
   :profiles {:debug {:debug true}
-             :dev   {:dependencies [[karma-reporter     "0.3.0"]
+             :dev   {:dependencies [[karma-reporter     "1.0.1"]
                                     [binaryage/devtools "0.7.2"]]
                      :plugins      [[lein-cljsbuild     "1.1.3"]
                                     [lein-npm           "0.6.2"]
