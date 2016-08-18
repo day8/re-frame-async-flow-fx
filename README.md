@@ -13,7 +13,7 @@
 
 ## Async Control Flow In re-frame
 
-Herein a re-frame [Effects Handler](https://github.com/Day8/re-frame/wiki/Effectful-Event-Handlers), keyed `:async-flow`,
+Herein a re-frame [Effects Handler](https://github.com/Day8/re-frame/docs), keyed `:async-flow`,
 which wrangles async tasks.  It manages control flow at app boot time.
 
 ## Quick Start Guide

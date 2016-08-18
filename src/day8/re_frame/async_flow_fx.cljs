@@ -4,7 +4,6 @@
     [clojure.set :as set]
     [day8.re-frame.forward-events-fx]))
 
-(def default-id  :async/flow)
 
 (defn seen-all-of?
   [required-events seen-events]
@@ -24,47 +23,43 @@
        (filterv (fn [task] ((:when task) (:events task) now-seen-events)))))
 
 
+(def map-when->fn {:seen?        seen-all-of?
+									 :seen-both?   seen-all-of?
+									 :seen-all-of? seen-all-of?
+									 :seen-any-of? seen-any-of?})
+
+(defn when->fn
+	[when-kw]
+	(if-let [when-fn (map-when->fn when-kw)]
+		when-fn
+		(re-frame/console :error  "async-flow: got bad value for :when - " when-kw)))
+
 (defn massage-rules
   "Massage the supplied rules as follows:
     - replace `:when` keyword value with a function implementing the predicate
     - ensure that only `:dispatch` or `:dispatch-n` is provided
-    - add a unique :id, if one not already present
-    - add halt event when :halt? present"
-  [flow-id rules]
-  (let [halt-event  [flow-id :halt-flow]
-        when->fn {:seen?        seen-all-of?
-                  :seen-both?   seen-all-of?
-                  :seen-all-of? seen-all-of?
-                  :seen-any-of? seen-any-of?}
-        add-halt (fn [tasks halt?]
-                   ; when rule represents stop, add `:halt-flow` as last event
-                   (if halt? (concat tasks [halt-event]) tasks))]
-    (->> rules
-         (map-indexed (fn [index {:keys [id when events dispatch dispatch-n halt?]}]
-                        (let [when-as-fn (when->fn when)
-                              _  (assert (cond [(some? dispatch) (some? dispatch-n)]
-                                               [false false] true ; either or both can be nil
-                                               [true false]  true ; only dispatch provided
-                                               [false true]  true ; only dispatch-n provided
-                                               false) "async-flow: rule can only specify one of :dispatch :dispatch-n")
-                              _  (assert (some? when-as-fn) (str "async-flow: found bad value for :when: " when))
-                              tasks (-> (cond
-                                          dispatch   (list dispatch)
-                                          dispatch-n dispatch-n
-                                          :else      nil)
-                                        (add-halt halt?))]
-                          {:id         (or id index)
-                           :when       when-as-fn
-                           :events     (if (coll? events) (set events) #{events})
-                           :dispatch-n tasks}))))))
+    - add a unique :id, if one not already present"
+  [rules]
+	(->> rules
+			 (map-indexed (fn [index {:as rule :keys [id when events dispatch dispatch-n halt?]}]
+											{:id         (or id index)
+											 :halt?      (or halt? false)
+											 :when       (when->fn when)
+											 :events     (if (coll? events) (set events) (hash-set events))
+											 :dispatch-n (cond
+																		 dispatch-n (if dispatch
+																									(re-frame/console :error "async-flow: rule can only specify one of :dispatch and :dispatch-n. Got both: " rule)
+																									dispatch-n)
+																		 dispatch   (list dispatch)
+																		 :else      '())}))))
 
 
-;; -- Create Event Handler
+;; -- Event Handler
 
 (defn make-flow-event-handler
-  "given a flow definitiion, returns an event handler which implements this definition"
+  "Given a flow definitiion, returns an event handler which implements this definition"
   [{:keys [id db-path rules first-dispatch]}]
-  (let [id          (or id default-id)
+  (let [
         ;; Subject to db-path, state is either stored in app-db or in a local atom
         ;; Two pieces of state are maintained:
         ;;  - the set of seen events
@@ -81,7 +76,7 @@
                       (fn [db] (get-in db db-path))
                       (fn [_] @local-store))
 
-        rules       (massage-rules id rules)]       ;; all of the events refered to in the rules
+        rules       (massage-rules rules)]       ;; all of the events refered to in the rules
 
     ;; Return an event handler which will manage the flow.
     ;; This event handler will receive 3 kinds of events:
@@ -89,7 +84,8 @@
     ;;   (dispatch [:id :halt-flow])
     ;;   (dispatch [:id [:forwarded :event :vector]])
     ;;
-    ;; This event handler returns a map of effects.
+    ;; This event handler returns a map of effects - it expects to be registered using
+		;; reg-event-fx
     ;;
     (fn async-flow-event-hander
       [{:keys [db]} event-v]
@@ -113,31 +109,44 @@
                     :forward-events           {:unregister id}
                     :deregister-event-handler id}
 
-        ;; Here we are managig the flow.
-        ;; A new event has been forwarded to this handler. What does it mean?
-        ;;  1. does this new event mean we need to dispatch another?
+        ;; Here we are managing the flow.
+        ;; A new event has been forwarded, so work out what should happen:
+        ;;  1. does this new event mean we should dispatch another?
         ;;  2. remember this event has happened
         (let [[_ [forwarded-event-id & args]] event-v
               {:keys [seen-events rules-fired]} (get-state db)
               new-seen-events (conj seen-events forwarded-event-id)
               ready-rules     (startable-rules rules new-seen-events rules-fired)
+							add-halt?       (some :halt? ready-rules)
               ready-rules-ids (->> ready-rules (map :id) set)
-              new-rules-fired (set/union rules-fired ready-rules-ids)]
+              new-rules-fired (set/union rules-fired ready-rules-ids)
+							new-dispatches  (cond-> (mapcat :dispatch-n ready-rules)
+																			add-halt? vec
+																			add-halt? (conj [id :halt-flow]))]
           (merge
             {:db       (set-state db new-seen-events new-rules-fired)}
-            (when (seq ready-rules) {:dispatch-n (mapcat :dispatch-n ready-rules)})))))))
+            (when (seq new-dispatches) {:dispatch-n new-dispatches})))))))
 
 
-;; -- Register effects handler with re-frame
+(defn- ensure-has-id
+	"Ensure `flow` has an id.
+	Return a vector of [id flow]"
+	[flow]
+	(if-let [id (:id flow)]
+		[id flow]
+		(let [new-id (keyword (str "async-flow/" (gensym "id-")))]
+			[new-id (assoc flow :id new-id)])))
+
+
+;; -- Effect handler
+
 
 (defn flow->handler
-  [{:as flow :keys [id] :or {id default-id}}]
-  (re-frame/reg-event-fx
-    id                                ;; add debug middleware if dp-path set ???  XXX
-    (make-flow-event-handler flow))
-  (re-frame/console :log "starting async-flow:" id)
-  (re-frame/dispatch [id :setup]))
-
+	"Action the given flow effect"
+  [flow]
+	(let [[id flow']  (ensure-has-id flow)]
+		(re-frame/reg-event-fx id (make-flow-event-handler flow'))   ;; register event handler
+		(re-frame/dispatch [id :setup])))                            ;; kicks things off
 
 (re-frame/reg-fx
   :async-flow

@@ -36,18 +36,19 @@
 
 
 (deftest test-massage-rules
-  (is (= (core/massage-rules :my-id [{:when :seen? :events :1 :dispatch [:2]}])
-         (list {:id 0 :when core/seen-all-of? :events #{:1} :dispatch-n (list [:2])})))
+  (is (= (core/massage-rules [{:when :seen? :events :1 :dispatch [:2]}])
+         (list {:id 0 :when core/seen-all-of? :events #{:1} :halt? false :dispatch-n (list [:2])})))
 
-  (is (= (core/massage-rules :my-id [{:when :seen-both? :events [:1 :2] :halt? true}])
-         (list {:id 0 :when core/seen-all-of? :events #{:1 :2} :dispatch-n (list [:my-id :halt-flow])})))
+  (is (= (core/massage-rules [{:when :seen-both? :events [:1 :2] :halt? true}])
+         (list {:id 0 :when core/seen-all-of? :events #{:1 :2} :halt? true :dispatch-n '()})))
 
-  (is (= (core/massage-rules :my-id [{:when :seen-any-of? :events #{:1 :2} :dispatch [:2] :halt? true}])
-         (list {:id 0 :when core/seen-any-of? :events #{:1 :2} :dispatch-n (list [:2] [:my-id :halt-flow])}))))
+  (is (= (core/massage-rules [{:when :seen-any-of? :events #{:1 :2} :dispatch [:2] :halt? true}])
+         (list {:id 0 :when core/seen-any-of? :events #{:1 :2} :halt? true :dispatch-n (list [:2])}))))
 
 
 (deftest test-setup
-  (let [flow       {:first-dispatch [:1]
+  (let [flow       {:id             :some-id
+										:first-dispatch [:1]
                     :rules          [
                                      {:when :seen? :events :1 :dispatch [:2]}
                                      {:when :seen? :events :3 :halt? true}]}
@@ -55,9 +56,9 @@
     (is (= (handler-fn {:db {}} [:dummy-id :setup])
            {:db             {}
             :dispatch       [:1]
-            :forward-events {:register     core/default-id
+            :forward-events {:register     :some-id
                               :events      #{:1 :3}
-                              :dispatch-to [core/default-id]}}))))
+                              :dispatch-to [:some-id]}}))))
 
 (deftest test-forwarding
   (let [flow {:first-dispatch [:start]
@@ -76,7 +77,7 @@
            {:db {:p {:seen-events #{:33 :no}
                      :rules-fired #{}}}}))
 
-    ;; new event should not cause a new dispatch because task is already started  (:id 0 is in ::rules-fired)
+    ;; new event should not cause a new dispatch because task is already started  (:id 0 is in :rules-fired)
     (is (= (handler-fn
              {:db {:p {:seen-events #{:1}
                        :rules-fired #{0}}}}
@@ -109,13 +110,14 @@
 
 
 (deftest test-halt1
-  (let [flow {:first-dispatch [:1]
+  (let [flow {:id :some-id
+							:first-dispatch [:1]
               :rules []}
         handler-fn   (core/make-flow-event-handler flow)]
     (is (= (handler-fn {:db {}} [:dummy-id :halt-flow])
            { ;; :db {}
-            :deregister-event-handler core/default-id
-            :forward-events           {:unregister core/default-id}}))))
+            :deregister-event-handler :some-id
+            :forward-events           {:unregister :some-id}}))))
 
 
 ;; Aggh. I don't have dissoc-in available to make this work.
