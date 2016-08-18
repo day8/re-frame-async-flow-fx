@@ -1,4 +1,4 @@
-(defproject day8.re-frame/async-flow-fx "0.0.6-SNAPSHOT"
+(defproject day8.re-frame/async-flow-fx "0.0.6"
   :description  "A re-frame effects handler for coordinating the kind of async control flow which often happens on app startup."
   :url          "https://github.com/Day8/re-frame-async-flow-fx.git"
   :license      {:name "MIT"}
