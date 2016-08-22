@@ -1,8 +1,3 @@
-> 
-> Status: freshly minted, but seems to work!!
-> Requires re-frame >= v0.8.0-alpha11
->
-
 
 [![GitHub license](https://img.shields.io/github/license/Day8/re-frame-async-flow-fx.svg)](license.txt)
 [![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)
@@ -13,8 +8,8 @@
 
 ## Async Control Flow In re-frame
 
-Herein a re-frame [Effects Handler](https://github.com/Day8/re-frame/docs), keyed `:async-flow`,
-which wrangles async tasks.  It manages control flow at app boot time.
+This re-frame library contains an [Effect Handler](https://github.com/Day8/re-frame/tree/develop/docs), 
+keyed `:async-flow`, which wrangles async tasks.  It manages control flow at app boot time.
 
 ## Quick Start Guide
 
@@ -23,6 +18,7 @@ which wrangles async tasks.  It manages control flow at app boot time.
 Add the following project dependency: <br>
 [![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/async-flow-fx.svg)](https://clojars.org/day8.re-frame/async-flow-fx)
 
+Requires re-frame >= 0.8.0
 
 ### Step 2. Initiate Boot
 
