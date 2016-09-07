@@ -117,7 +117,7 @@ If the tasks are all synchronous, then the coordination can be done in code.
 Each task is a function, and we satisfy the task dependencies by correctly
 ordering how they are called. In a re-frame context, we'd have this:
 ```clj
-(reg-event
+(reg-event-db
   :boot
   (fn [db]
     (-> {}
