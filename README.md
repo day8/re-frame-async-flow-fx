@@ -8,8 +8,25 @@
 
 ## Async Control Flow In re-frame
 
-This re-frame library contains an [Effect Handler](https://github.com/Day8/re-frame/tree/develop/docs), 
-keyed `:async-flow`, which wrangles async tasks.  It manages control flow at app boot time.
+This [re-frame library](https://github.com/Day8/re-frame) coordinates a set of
+asynchronous, stateful tasks which have dependencies (and consequently need to be ordered). 
+
+It was designed to support one principal usecase: **starting an application**.  
+
+As an example, imagine an application which, during startup, has to connect with 
+a backend server via a web socket, load some user settings data, and then a user portfolio, while also 
+connecting to Intercom, but not until the user settings were loaded, while remembering that 
+any of these processes might fail because of network problems.
+
+So, using this library, you can **coordinate the kind of asynchronous control flow** which 
+is often necessary to successfully boot 
+a re-frame application "up" into a functioning state, while also gracefully handling failures. 
+
+It has a similar intent to [mount](https://github.com/tolitius/mount) or [component](https://github.com/stuartsierra/component),
+but it dovetails with, and leverages re-frame's event driven architecture to get the job done.
+
+Technically, this library implements an [Effect Handler](https://github.com/Day8/re-frame/tree/develop/docs), 
+keyed `:async-flow`, and it has a declarative, data oriented design.
 
 ## Quick Start Guide
 
