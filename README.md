@@ -9,24 +9,31 @@
 ## Async Control Flow In re-frame
 
 This [re-frame library](https://github.com/Day8/re-frame) coordinates a set of
-asynchronous, stateful tasks which have dependencies (and consequently need to be ordered). 
+asynchronous, stateful tasks which have dependencies (and consequently need to be ordered).
 
-It was designed to support one principal usecase: **starting an application**.  
+It was designed to support a principal usecase: **booting an SPA**.
 
-As an example, imagine an application which, during startup, has to connect with 
-a backend server via a web socket, load some user settings data, and then a user portfolio, while also 
-connecting to Intercom, but not until the user settings were loaded, while remembering that 
+As an example, imagine an application which, during startup, has to connect with
+a backend server via a web socket, load some user settings data, and then a user portfolio, while also
+connecting to Intercom, but not until the user settings were loaded, while remembering that
 any of these processes might fail because of network problems.
 
 So, using this library, you can **coordinate the kind of asynchronous control flow** which 
 is often necessary to successfully boot 
-a re-frame application "up" into a functioning state, while also gracefully handling failures. 
+a re-frame application "up" into a functioning state, while also gracefully handling failures.
 
 It has a similar intent to [mount](https://github.com/tolitius/mount) or [component](https://github.com/stuartsierra/component),
-but it dovetails with, and leverages re-frame's event driven architecture to get the job done.
+but it dovetails with, and leverages re-frame's event driven architecture to more elegantly get the job done.
 
 Technically, this library implements an [Effect Handler](https://github.com/Day8/re-frame/tree/develop/docs), 
-keyed `:async-flow`, and it has a declarative, data oriented design.
+keyed `:async-flow`. It has a declarative, data oriented design.
+
+#### TOC
+
+- [Quick Start Guide](#quick-start-guide)
+- [Problem Definition](#Problem-Definition)
+- [The Solution](#the-solution)
+- [Design Philosophy](#design-philosophy)
 
 ## Quick Start Guide
 
@@ -56,7 +63,7 @@ Well, `dispatch-sync` is convenient here because it ensures that
 `dispatch` would work too, except it runs the handler **later**.  So, we'd have to then code
 defensively in our subscriptions and views, guarding against having an uninitialised `app-db`.
 
-This is the only known case where you should use `dispatch-sync` over `dispatch` (other than tests).
+This is the only known case where you should use `dispatch-sync` over `dispatch` (other than in tests).
 
 ### Step 3. Registration And Use
 
@@ -71,26 +78,25 @@ In the namespace where you register your event handlers, perhaps called `events.
     ...))
 ```
 
-Because we never subsequently use this require, it
+Because we never subsequently use this `require`, it
 appears redundant.  But its existence will cause the `:async-flow` effect
 handler to self-register with re-frame, which is important
 to everything that follows.
 
-
-**Second**, write a function which returns a data structure defining the async flow required:
+**Second**, write a function which returns a declarative description (as a data structure) of the async flow required, like this:
 ```clj
 (defn boot-flow
   []
   {:first-dispatch [:do-X]              ;; what event kicks things off ?
-   :rules [
+   :rules [                             ;; a set of rules describing the required flow
      {:when :seen? :events :success-X  :dispatch [:do-Y]}
      {:when :seen? :events :success-Y  :dispatch [:do-Z]}
      {:when :seen? :events :success-Z  :halt? true}
      {:when :seen-any-of? :events [:fail-X :fail-Y :fail-Z] :dispatch  [:app-failed-state] :halt? true}]})
 ```
-We hope that you can almost read the `rules` as English sentences to understand what's being specified. Suffice
-it to say the simple flow above says to run tasks X, Y and Z serially, like dominoes. More complicated
-scenarios are possible. Full particulars of this data structure are given below.
+Try to read each `rule` line as an English sentence. When this event happens, dispatch another event. 
+The rules above combine to run tasks X, Y and Z serially, like dominoes. Much more complicated
+scenarios are possible. Full particulars of this data structure are provided below in the Tutorial section.
 
 **Third**, write the event handler for `:boot`:
 
@@ -114,9 +120,7 @@ Notice at that last line. This library provides the "effect handler" which imple
 and actions the data structure returned by `(boot-flow)`.
 
 
-## Tutorial
-
-#### Problem Definition
+## Problem Definition
 
 When an App boots, it performs a set of tasks to initialise itself.
 
@@ -127,7 +131,7 @@ a library like [Component](https://github.com/stuartsierra/component) or [mount]
 is often turned to in these moments, but we won't be
 doing that here. We'll be using an approach which is more re-frame friendly.
 
-#### Easy
+### Easy
 
 If the tasks are all synchronous, then the coordination can be done in code.
 
@@ -146,7 +150,7 @@ ordering how they are called. In a re-frame context, we'd have this:
 and in our app's `main` function we'd `(dispatch [:boot])`
 
 
-#### Time
+### Time
 
 But, of course, it is never that easy because some of the tasks will be asynchronous.
 
@@ -173,7 +177,7 @@ In our solution, we'll be using a re-frame variation which hides (most of) the
 state machine complexity.
 
 
-#### Failures
+### Failures
 
 There will also be failures and errors!
 
@@ -183,19 +187,19 @@ path too? Ernos? They should have.
 
 When one of the asynchronous startup tasks fails, we
 must be able to stop the normal boot sequence and put the application
-in a satisfactory failed state, explaining to the user
-what went wrong (Eg: "No Internet connection" or "Couldn't load user portfolio").
+in a satisfactory failed state, sending necessary logs and explaining to the user
+what went wrong - eg: "No Internet connection" or "Couldn't load user portfolio". 
 
 
-#### Efficiency
+### Efficiency
 
 And then, of course, there's the familiar pull of efficiency.
 
 We want our app to boot in the shortest possible amount of time. So any asynchronous
-tasks which could be done in parallel, should be done in parallel.
+tasks which can be done in parallel, must be done in parallel.
 
-So the boot process is seldom linear, one task after an another. Instead, it involves
-dependencies like:  when task1 has finished, we can start task2, task3 and task4 in
+The boot process is seldom linear, one task after an another. Instead, it involves
+dependencies like:  when task1 has finished, start all of task2, task3 and task4 in
 parallel.  And task5 can be started only when both task2 and task3 has completed successfully.
 And task6 can start when task3 alone has completed, but we really don't care if it finishes
 properly - it is non essential to a working app.
@@ -203,25 +207,24 @@ properly - it is non essential to a working app.
 So, we need to coordinate asynchronous flows, with complex dependencies, while handling failures.
 Not easy, but that's why they pay us the big bucks.
 
-#### As Data Please
+### As Data Please
 
-Because we program in Clojure, we spend time in hammocks carefully re-watching Rich Hickey videos and
+Because we program in Clojure, we spend time in hammocks dreamily re-watching Rich Hickey videos and
 meditating on essential truths like "data is the ultimate in late binding".
 
 So, our solution must involve "programming with data" and be, at once, all synonyms of easy.
 
-#### In One Place
+### In One Place
 
 The control flow should be described in just one place, and easily
 grokable as a unit.
 
-To put that another way: we do not want the coordination logic implemented in a way that
-requires a programmer to look in multiple places to reconstruct
-a mental model of the overall control flow.
+To put that another way: we do not want a programmer to have to look
+in multiple places to reconstruct a mental model of the overall control flow.
 
 ## The Solution
 
-re-frame has events. That's how we roll.
+**re-frame has events. That's how we roll.**
 
 A re-frame application can't step forward in time unless an event happens; unless something
 does a `dispatch`.  Events will be the organising principle in our solution exactly
@@ -236,21 +239,24 @@ If we take an X-ray of an async task, we'll see this event skeleton:
  - if the task succeeds, an event is dispatched
  - if the task fails, an event is dispatched
 
-So that's three events: one to start and two ways to finish.
+So that's three events: **one to start and two ways to finish**. Please read that again
+- its importance is sometimes missed on first reading. Your tasks must confirm to this 
+3 event structure (which is not hard).  
 
-Of course, re-frame will route all three events to a registered handler. The actual WORK of
+Of course, re-frame will route all three events to their registered handler. The actual WORK of
 starting the task, or handling the errors, will be done in the event handler that you write.
 
-But, here, none of that menial labour concerns us. We care only about the **coordination** of
-tasks. We care only that task2 is started when task1 finishes successfully, and we don't need
+But, here, none of that menial labour concerns us. **Here we care only about the coordination of
+tasks**. We care only that task2 is started when task1 finishes successfully, and we don't need
 to know what task1 or task2 actually do.
 
-To distil that: we care only that the `dispatch` to start task2 is fired correctly when we
+To distill that: we care only that the `dispatch` to start task2 is fired correctly when we
 have seen an event saying that task1 finished successfully.
 
 ### When-E1-Then-E2
 
-Read that last paragraph again.  It distils further to: when event E1 happens then `dispatch` event E2.  Or, more pithily again, When-E1-Then-E2.
+Read that last paragraph again.  It distills further to: when event E1 happens then 
+`dispatch` event E2.  Or, more pithily again, When-E1-Then-E2.
 
 When-E1-Then-E2 is the simple case, with more complicated variations like:
   - when **both** events E1 and E2 have happened, then dispatch E3
@@ -384,19 +390,19 @@ Notes:
       solution is aligned on re-frame fundamentals.
 
 
-### Design Philosophy
+## Design Philosophy
 
 Managing async task flow means managing time, and managing time requires a state machine. You need:
    - some retained state   (describing where we have got to)
-   - events which announce that something has happened or not happened (aka triggers)
+   - events which announce that something has happened or not happened (aka FSM triggers)
    - a set of rules about transitioning app state and triggering further activity when events arrive.
 
 One way or another you'll be implementing a state machine. There's no getting away from that.
 
 Although there are ways of hiding it!! Redux-saga uses ES6 generator functions to provide the illusion of a
 synchronous control flow. The "state machine" is encoded directly into the generator function's
-statements (one after the other, or via `if` `then` `else` logic, or `via` loops). And that's a nice
-and simple solution for many cases.
+statements (sequentially, or via `if` `then` `else` logic, or via `loops`). And that's a nice
+and simple abstraction for many cases.
 
 But, as always, there are trade-offs.
 
@@ -405,14 +411,14 @@ the state machine). In clojure, we have a preference for "programming in data" w
 
 Second, coding (in javascript) a more complicated state machines with a bunch of failure states and
 cascades will ultimately get messy. Time is like a liquid under pressure and it will force it way
-out through the cracks in the abstraction.  History tells us to implement state machines
-in a table driven way (a data driven way).
+out through the cracks in the abstraction.  A long history with FSM encourages us to implement 
+state machines in a data driven way (a table driven way). 
 
-So we choose data (while being mindful of the takeoffs).
+So we choose data and reject the redux-saga approach (while being mindful of the takeoffs).
 
 But it would be quite possible to create a re-frame version of redux-saga.  In ClosureScript
-we have core.async instead of generator functions. That is left as an exercise for the motivated reader.
+we have `core.async` instead of generator functions. That is left as an exercise for the motivated reader.
 
-A motivated user might also produce a full-on FSM version of this effects handler.
+A motivated user might also produce a fully general FSM version of this effects handler.
 
 
