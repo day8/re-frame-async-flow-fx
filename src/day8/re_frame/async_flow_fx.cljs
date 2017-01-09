@@ -24,15 +24,15 @@
 
 
 (def map-when->fn {:seen?        seen-all-of?
-									 :seen-both?   seen-all-of?
-									 :seen-all-of? seen-all-of?
-									 :seen-any-of? seen-any-of?})
+                   :seen-both?   seen-all-of?
+                   :seen-all-of? seen-all-of?
+                   :seen-any-of? seen-any-of?})
 
 (defn when->fn
-	[when-kw]
-	(if-let [when-fn (map-when->fn when-kw)]
-		when-fn
-		(re-frame/console :error  "async-flow: got bad value for :when - " when-kw)))
+  [when-kw]
+  (if-let [when-fn (map-when->fn when-kw)]
+    when-fn
+    (re-frame/console :error  "async-flow: got bad value for :when - " when-kw)))
 
 (defn massage-rules
   "Massage the supplied rules as follows:
@@ -40,18 +40,20 @@
     - ensure that only `:dispatch` or `:dispatch-n` is provided
     - add a unique :id, if one not already present"
   [rules]
-	(->> rules
-			 (map-indexed (fn [index {:as rule :keys [id when events dispatch dispatch-n halt?]}]
-											{:id         (or id index)
-											 :halt?      (or halt? false)
-											 :when       (when->fn when)
-											 :events     (if (coll? events) (set events) (hash-set events))
-											 :dispatch-n (cond
-																		 dispatch-n (if dispatch
-																									(re-frame/console :error "async-flow: rule can only specify one of :dispatch and :dispatch-n. Got both: " rule)
-																									dispatch-n)
-																		 dispatch   (list dispatch)
-																		 :else      '())}))))
+  (->> rules
+       (map-indexed (fn [index {:as rule :keys [id when events dispatch dispatch-n halt?]}]
+                      {:id         (or id index)
+                       :halt?      (or halt? false)
+                       :when       (when->fn when)
+                       :events     (if (coll? events) (set events) (hash-set events))
+                       :dispatch-n (cond
+                                     dispatch-n (if dispatch
+                                                  (re-frame/console :error
+                                                                    "async-flow: rule can only specify one of :dispatch and :dispatch-n. Got both: "
+                                                                    rule)
+                                                  dispatch-n)
+                                     dispatch   (list dispatch)
+                                     :else      '())}))))
 
 
 ;; -- Event Handler
@@ -120,36 +122,33 @@
 							add-halt?       (some :halt? ready-rules)
               ready-rules-ids (->> ready-rules (map :id) set)
               new-rules-fired (set/union rules-fired ready-rules-ids)
-							new-dispatches  (cond-> (mapcat :dispatch-n ready-rules)
-																			add-halt? vec
-																			add-halt? (conj [id :halt-flow]))]
+              new-dispatches  (cond-> (mapcat :dispatch-n ready-rules)
+                                add-halt? vec
+                                add-halt? (conj [id :halt-flow]))]
           (merge
-            {:db       (set-state db new-seen-events new-rules-fired)}
-            (when (seq new-dispatches) {:dispatch-n new-dispatches})))))))
+           {:db (set-state db new-seen-events new-rules-fired)}
+           (when (seq new-dispatches) {:dispatch-n new-dispatches})))))))
 
 
 (defn- ensure-has-id
-	"Ensure `flow` has an id.
-	Return a vector of [id flow]"
-	[flow]
-	(if-let [id (:id flow)]
-		[id flow]
-		(let [new-id (keyword (str "async-flow/" (gensym "id-")))]
-			[new-id (assoc flow :id new-id)])))
+  "Ensure `flow` has an id. Return a vector of [id flow]."
+  [flow]
+  (if-let [id (:id flow)]
+    [id flow]
+    (let [new-id (keyword (str "async-flow/" (gensym "id-")))]
+      [new-id (assoc flow :id new-id)])))
 
 
 ;; -- Effect handler
 
 
 (defn flow->handler
-	"Action the given flow effect"
+  "Action the given flow effect"
   [flow]
-	(let [[id flow']  (ensure-has-id flow)]
-		(re-frame/reg-event-fx id (make-flow-event-handler flow'))   ;; register event handler
-		(re-frame/dispatch [id :setup])))                            ;; kicks things off
+  (let [[id flow']  (ensure-has-id flow)]
+    (re-frame/reg-event-fx id (make-flow-event-handler flow'))   ;; register event handler
+    (re-frame/dispatch [id :setup])))                            ;; kicks things off
 
 (re-frame/reg-fx
   :async-flow
   flow->handler)
-
-
