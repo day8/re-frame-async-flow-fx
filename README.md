@@ -239,7 +239,7 @@ If we take an X-ray of an async task, we'll see this event skeleton:
  - if the task fails, an event is dispatched
 
 So that's three events: **one to start and two ways to finish**. Please read that again
-- its importance is sometimes missed on first reading. Your tasks must confirm to this 
+- its importance is sometimes missed on first reading. Your tasks must conform to this 
 3 event structure (which is not hard).  
 
 Of course, re-frame will route all three events to their registered handler. The actual WORK of
@@ -313,7 +313,7 @@ Further Notes:
    nowhere do we wait for a `:success-intercom`.  We want this process started,
    but it is not essential for the app's function, so we don't wait for it to complete.
 
-2. The coordination processes never actively participates in handling any events. Event handlers
+2. The coordination processes never actively participate in handling any events. Event handlers
    themselves do all that work. They know how to handle success or failure - what state to record so
    that the twirly thing is shown to users, or not. What messages are shown. Etc.
 
@@ -323,7 +323,7 @@ Further Notes:
 
 4. The `:halt?` value of true means the boot flow is completed.  Clean up the flow coordinator.
    It will have some state somewhere. So get rid of that.  And it will have been "sniffing events",
-   so stop doing that too. You should provide at least one of these in your rules.
+   so stop doing that, too. You should provide at least one of these in your rules.
 
 5. There's nothing in here about the teardown process as the application is closing. Here we're only
    helping the boot process.
@@ -408,10 +408,10 @@ But, as always, there are trade-offs.
 First, the state machine is encoded in javascript "code" (the generator function implements
 the state machine). In clojure, we have a preference for "programming in data" where possible.
 
-Second, coding (in javascript) a more complicated state machines with a bunch of failure states and
-cascades will ultimately get messy. Time is like a liquid under pressure and it will force it way
+Second, coding (in javascript) a more complicated state machine with a bunch of failure states and
+cascades will ultimately get messy. Time is like a liquid under pressure and it will force its way
 out through the cracks in the abstraction.  A long history with FSM encourages us to implement 
-state machines in a data driven way (a table driven way). 
+state machines in a data driven way (a table driven way).
 
 So we choose data and reject the redux-saga approach (while being mindful of the takeoffs).
 
@@ -419,5 +419,3 @@ But it would be quite possible to create a re-frame version of redux-saga.  In C
 we have `core.async` instead of generator functions. That is left as an exercise for the motivated reader.
 
 A motivated user might also produce a fully general FSM version of this effects handler.
-
-
