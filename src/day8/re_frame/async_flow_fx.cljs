@@ -4,6 +4,20 @@
     [clojure.set :as set]
     [day8.re-frame.forward-events-fx]))
 
+(defn dissoc-in
+  "Dissociates an entry from a nested associative structure returning a new
+  nested structure. keys is a sequence of keys. Any empty maps that result
+  will not be present in the new structure.
+  The key thing is that 'm' remains identical? to istelf if the path was never present"
+  [m [k & ks :as keys]]
+  (if ks
+    (if-let [nextmap (get m k)]
+      (let [newmap (dissoc-in nextmap ks)]
+        (if (seq newmap)
+          (assoc m k newmap)
+          (dissoc m k)))
+      m)
+    (dissoc m k)))
 
 (defn seen-all-of?
   [required-events seen-events]
@@ -49,11 +63,11 @@
                        :dispatch-n (cond
                                      dispatch-n (if dispatch
                                                   (re-frame/console :error
-                                                                    "async-flow: rule can only specify one of :dispatch and :dispatch-n. Got both: "
-                                                                    rule)
+                                                    "async-flow: rule can only specify one of :dispatch and :dispatch-n. Got both: "
+                                                    rule)
                                                   dispatch-n)
-                                     dispatch   (list dispatch)
-                                     :else      '())}))))
+                                     dispatch (list dispatch)
+                                     :else '())}))))
 
 
 ;; -- Event Handler
@@ -87,12 +101,12 @@
     ;;   (dispatch [:id [:forwarded :event :vector]])
     ;;
     ;; This event handler returns a map of effects - it expects to be registered using
-		;; reg-event-fx
+    ;; reg-event-fx
     ;;
     (fn async-flow-event-hander
-      [{:keys [db]} event-v]
+      [{:keys [db]} [_ event-type :as event-v]]
 
-      (condp = (second event-v)
+      (condp = event-type
         ;; Setup this flow coordinator:
         ;;   1. Establish initial state - :seen-events and ::rules-fired are made empty sets
         ;;   2. dispatch the first event, to kick start flow
@@ -103,14 +117,6 @@
                                  :events      (apply set/union (map :events rules))
                                  :dispatch-to [id]}}
 
-        ;; Teardown this flow coordinator:
-        ;;   1. remove this event handler
-        ;;   2. remove any state stored in app-db
-        ;;   3. deregister the events forwarder
-        :halt-flow {;; :db (dissoc db db-path)  ;; Aggh. I need dissoc-in to make this work.
-                    :forward-events           {:unregister id}
-                    :deregister-event-handler id}
-
         ;; Here we are managing the flow.
         ;; A new event has been forwarded, so work out what should happen:
         ;;  1. does this new event mean we should dispatch another?
@@ -119,15 +125,23 @@
               {:keys [seen-events rules-fired]} (get-state db)
               new-seen-events (conj seen-events forwarded-event-id)
               ready-rules     (startable-rules rules new-seen-events rules-fired)
-							add-halt?       (some :halt? ready-rules)
+              halt?           (some :halt? ready-rules)
               ready-rules-ids (->> ready-rules (map :id) set)
               new-rules-fired (set/union rules-fired ready-rules-ids)
-              new-dispatches  (cond-> (mapcat :dispatch-n ready-rules)
-                                add-halt? vec
-                                add-halt? (conj [id :halt-flow]))]
+              new-dispatches  (mapcat :dispatch-n ready-rules)
+              new-db          (set-state db new-seen-events new-rules-fired)]
           (merge
-           {:db (set-state db new-seen-events new-rules-fired)}
-           (when (seq new-dispatches) {:dispatch-n new-dispatches})))))))
+           {:db new-db}
+           (when (seq new-dispatches)
+             {:dispatch-n new-dispatches})
+           (when halt?
+             ;; Teardown this flow coordinator:
+             ;;   1. remove this event handler
+             ;;   2. remove any state stored in app-db
+             ;;   3. deregister the events forwarder
+             {:db                       (dissoc-in new-db db-path)
+              :forward-events           {:unregister id}
+              :deregister-event-handler id})))))))
 
 
 (defn- ensure-has-id
