@@ -125,23 +125,21 @@
               {:keys [seen-events rules-fired]} (get-state db)
               new-seen-events (conj seen-events forwarded-event-id)
               ready-rules     (startable-rules rules new-seen-events rules-fired)
-              add-halt?       (some :halt? ready-rules)
+              halt?           (some :halt? ready-rules)
               ready-rules-ids (->> ready-rules (map :id) set)
               new-rules-fired (set/union rules-fired ready-rules-ids)
               new-dispatches  (mapcat :dispatch-n ready-rules)
-              #_(cond-> (mapcat :dispatch-n ready-rules)
-                  add-halt? (dissoc-in db-path))
               new-db          (set-state db new-seen-events new-rules-fired)]
           (merge
            {:db new-db}
            (when (seq new-dispatches)
              {:dispatch-n new-dispatches})
-           (when add-halt?
+           (when halt?
              ;; Teardown this flow coordinator:
              ;;   1. remove this event handler
              ;;   2. remove any state stored in app-db
              ;;   3. deregister the events forwarder
-             {:db                       (dissoc-in new-db db-path) ;; Aggh. I need dissoc-in to make this work.
+             {:db                       (dissoc-in new-db db-path)
               :forward-events           {:unregister id}
               :deregister-event-handler id})))))))
 
