@@ -8,7 +8,7 @@
   "Dissociates an entry from a nested associative structure returning a new
   nested structure. keys is a sequence of keys. Any empty maps that result
   will not be present in the new structure.
-  The key thing is that 'm' remains identical? to istelf if the path was never present"
+  The key thing is that 'm' remains identical? to iself if the path was never present"
   [m [k & ks :as keys]]
   (if ks
     (if-let [nextmap (get m k)]
@@ -19,14 +19,37 @@
       m)
     (dissoc m k)))
 
+
+(defn as-callback-pred
+  "Looks at the required-events items and returns a predicate which
+  will either
+  - match only the event-keyword if a keyword is supplied
+  - match the entire event vector if a collection is supplied
+  - returns a the item itself if a fn is supplied"
+  [callback-pred]
+  (when callback-pred
+    (cond (fn? callback-pred) callback-pred
+          (keyword? callback-pred) (fn [[event-id _]]
+                                     (= callback-pred event-id))
+          (coll? callback-pred) (fn [event-v]
+                                  (= callback-pred event-v))
+          :else (throw
+                  (ex-info (str (pr-str callback-pred)
+                             " isn't an event predicate")
+                    {:callback-pred callback-pred})))))
+
 (defn seen-all-of?
   [required-events seen-events]
-  (empty? (set/difference required-events seen-events)))
+  (every?
+    (fn [pred] (some (fn [e] (pred e)) seen-events))
+    (map as-callback-pred required-events)))
 
 
 (defn seen-any-of?
   [required-events seen-events]
-  (some? (seq (set/intersection seen-events required-events))))
+  (some? (some
+           (fn [pred] (some (fn [e] (pred e)) seen-events))
+           (map as-callback-pred required-events))))
 
 
 (defn startable-rules
@@ -121,9 +144,9 @@
         ;; A new event has been forwarded, so work out what should happen:
         ;;  1. does this new event mean we should dispatch another?
         ;;  2. remember this event has happened
-        (let [[_ [forwarded-event-id & args]] event-v
+        (let [[_ forwarded-event] event-v
               {:keys [seen-events rules-fired]} (get-state db)
-              new-seen-events (conj seen-events forwarded-event-id)
+              new-seen-events (conj seen-events forwarded-event)
               ready-rules     (startable-rules rules new-seen-events rules-fired)
               halt?           (some :halt? ready-rules)
               ready-rules-ids (->> ready-rules (map :id) set)
