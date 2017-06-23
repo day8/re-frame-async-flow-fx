@@ -8,7 +8,7 @@
   "Dissociates an entry from a nested associative structure returning a new
   nested structure. keys is a sequence of keys. Any empty maps that result
   will not be present in the new structure.
-  The key thing is that 'm' remains identical? to iself if the path was never present"
+  The key thing is that 'm' remains identical? to itself if the path was never present"
   [m [k & ks :as keys]]
   (if ks
     (if-let [nextmap (get m k)]
@@ -25,7 +25,7 @@
   will either
   - match only the event-keyword if a keyword is supplied
   - match the entire event vector if a collection is supplied
-  - returns a the item itself if a fn is supplied"
+  - returns a callback-pred if it is a fn"
   [callback-pred]
   (when callback-pred
     (cond (fn? callback-pred) callback-pred
@@ -40,16 +40,19 @@
 
 (defn seen-all-of?
   [required-events seen-events]
-  (every?
-    (fn [pred] (some (fn [e] (pred e)) seen-events))
-    (map as-callback-pred required-events)))
+  (let [callback-preds (map as-callback-pred required-events)]
+    (every?
+      (fn [pred] (some pred seen-events))
+      callback-preds)))
 
 
 (defn seen-any-of?
   [required-events seen-events]
-  (some? (some
-           (fn [pred] (some (fn [e] (pred e)) seen-events))
-           (map as-callback-pred required-events))))
+  (let [callback-preds (map as-callback-pred required-events)]
+    (some?
+      (some
+        (fn [pred] (some pred seen-events))
+        callback-preds))))
 
 
 (defn startable-rules
