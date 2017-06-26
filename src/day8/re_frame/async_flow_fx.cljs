@@ -46,17 +46,13 @@
                                   _ (assert (or (= #{:unregister} (-> m keys set))
                                               (= #{:register :events :dispatch-to} (-> m keys set))) (str "re-frame: effects handler for :forward-events given wrong map keys" (-> m keys set)))]
                               (if unregister
-                                (let [f (@id->listen-fn unregister)
-                                      _ (assert (some? f) (str ":forward-events  asked to unregister an unknown id: " unregister))]
-                                  (re-frame/remove-post-event-callback f)
-                                  (swap! id->listen-fn dissoc unregister))
+                                (re-frame/remove-post-event-callback unregister)
                                 (let [events-preds           (map as-callback-pred events)
                                       post-event-callback-fn (fn [event-v _]
                                                                (when (some (fn [pred] (pred event-v))
                                                                        events-preds)
-                                                                 (re-frame/dispatch (conj dispatch-to event-v))))]
-                                  (re-frame/add-post-event-callback post-event-callback-fn)
-                                  (swap! id->listen-fn assoc register post-event-callback-fn)))))]
+                                                                  (re-frame/dispatch (conj dispatch-to event-v))))]
+                                  (re-frame/add-post-event-callback register post-event-callback-fn)))))]
     (fn [val]
       (cond
         (map? val)        (process-one-entry val)
@@ -144,6 +140,7 @@
                       (fn [_] @local-store))
 
         rules       (massage-rules rules)]       ;; all of the events refered to in the rules
+
     ;; Return an event handler which will manage the flow.
     ;; This event handler will receive 3 kinds of events:
     ;;   (dispatch [:id :setup])
