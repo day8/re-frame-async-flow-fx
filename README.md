@@ -282,7 +282,7 @@ line as if it was an English sentence and something like this should emerge: `wh
 The structure of each rule (map) is:
 
 ```clj
-{:when       W     ;; one of:  :seen?, :seen-both?, :seen-all-of?, :seen-any-off?
+{:when       W     ;; one of:  :seen?, :seen-both?, :seen-all-of?, :seen-any-of?
  :events     X     ;; either a single keyword or a seq of keywords representing event ids
  :dispatch   Y     ;; (optional) single vector (to dispatch)
  :dispatch-n Z     ;; (optional) list of vectors (to dispatch)
