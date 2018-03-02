@@ -1,3 +1,6 @@
+##v0.0.7  (2017.07.09)##
+   - remove :halt-flow dispatch
+
 ##v0.0.5  (2016.07.XX)##
     - allow flow handler to be used from non fx handler via flow->handler
     - rules can either use :dispatch for one or :dispatch-n for multiple

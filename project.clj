@@ -1,10 +1,10 @@
-(defproject day8.re-frame/async-flow-fx "0.0.7-SNAPSHOT"
+(defproject day8.re-frame/async-flow-fx "0.0.9-SNAPSHOT"
   :description  "A re-frame effects handler for coordinating the kind of async control flow which often happens on app startup."
   :url          "https://github.com/Day8/re-frame-async-flow-fx.git"
   :license      {:name "MIT"}
-  :dependencies [[org.clojure/clojure        "1.8.0"]
-                 [org.clojure/clojurescript  "1.9.89"]
-                 [re-frame                   "0.8.0"]
+  :dependencies [[org.clojure/clojure        "1.8.0"  :scope "provided"]
+                 [org.clojure/clojurescript  "1.9.89" :scope "provided"]
+                 [re-frame                   "0.8.0"  :scope "provided"]
                  [day8.re-frame/forward-events-fx "0.0.5"]]
 
   :profiles {:debug {:debug true}

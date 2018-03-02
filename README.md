@@ -282,7 +282,7 @@ line as if it was an English sentence and something like this should emerge: `wh
 The structure of each rule (map) is:
 
 ```clj
-{:when       W     ;; one of:  :seen?, :seen-both?, :seen-all-of?, :seen-any-off?
+{:when       W     ;; one of:  :seen?, :seen-both?, :seen-all-of?, :seen-any-of?
  :events     X     ;; either a single keyword or a seq of keywords representing event ids
  :dispatch   Y     ;; (optional) single vector (to dispatch)
  :dispatch-n Z     ;; (optional) list of vectors (to dispatch)
@@ -356,7 +356,9 @@ A `rule` is a map with the following fields:
 
   - `:when`  one of `:seen?`, `:seen-both?`. `:seen-all-of?`, `:seen-any-of?`
     `:seen?`, `:seen-both?` and `:seen-all-of?` are interchangeable.
-  - `:events` either a single keyword, or a seq of keywords, presumably event ids
+  - `:events` either a single keyword, or a collection of keywords, presumably event ids.
+              a collection can also contain whole event vectors that will be matched,
+              or event predicates that return true or false when passed an event vector.
   - `:dispatch` can be a single vector representing one event to dispatch.
   - `:dispatch-n` to dispatch multiple events, must be a coll where each elem represents one event to dispatch.
   - `:halt?` optional boolean. If true, the flow enters teardown and stops. 
