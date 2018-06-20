@@ -361,7 +361,8 @@ A `rule` is a map with the following fields:
               or event predicates that return true or false when passed an event vector.
   - `:dispatch` can be a single vector representing one event to dispatch.
   - `:dispatch-n` to dispatch multiple events, must be a coll where each elem represents one event to dispatch.
-  - `:halt?` optional boolean. If true, the flow enters teardown and stops. 
+  - `:dispatch-fn` can be a function that accepts the seen event, and returns a coll where each elem represents one event to dispatch.
+  - `:halt?` optional boolean. If true, the flow enters teardown and stops.
 
 
 ### Under The Covers
@@ -389,6 +390,26 @@ Notes:
   2.  All the work is done in a normal event handler (dynamically created for you).  And
       it is all organised around events which this event handler processes. So this
       solution is aligned on re-frame fundamentals.
+
+
+### Advanced use
+
+In some circumstances, it is necessary to hook into not just the event itself, but the data carried in the event.
+In these cases, functions can be used as an event predicate, or a dispatch rule.
+
+For example, when uploading a file, a success event may return an id which needs to be passed on to a subsequent event.
+
+```clj
+{:when :seen? :events :upload/success
+ :dispatch-fn (fn [[e id]] [[:remote/file-uploaded id]])}
+```
+
+Or, to to dispatch a server error event if a status of 500 or above has been seen
+
+```clj
+{:when :seen? :events (fn [[e status]] (and (= e :http/response-received) (>= status 500)))
+ :dispatch [:server/error]))
+```
 
 
 ## Design Philosophy

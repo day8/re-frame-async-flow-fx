@@ -102,20 +102,36 @@
     - add a unique :id, if one not already present"
   [rules]
   (->> rules
-       (map-indexed (fn [index {:as rule :keys [id when events dispatch dispatch-n halt?]}]
-                      {:id         (or id index)
-                       :halt?      (or halt? false)
-                       :when       (when->fn when)
-                       :events     (if (coll? events) (set events) (hash-set events))
-                       :dispatch-n (cond
-                                     dispatch-n (if dispatch
-                                                  (re-frame/console :error
-                                                    "async-flow: rule can only specify one of :dispatch and :dispatch-n. Got both: "
-                                                    rule)
-                                                  dispatch-n)
-                                     dispatch (list dispatch)
-                                     :else '())}))))
+       (map-indexed (fn [index {:as rule :keys [id when events dispatch dispatch-n dispatch-fn halt?]}]
+                      (if (< 1 (count (remove nil? [dispatch dispatch-n dispatch-fn])))
+                        (re-frame/console :error
+                                          "async-flow: rule can only specify one of :dispatch, :dispatch-n and :dispatch-fn. Got more than one: " rule)
+                        (cond-> {:id         (or id index)
+                                 :halt?      (or halt? false)
+                                 :when       (when->fn when)
+                                 :events     (if (coll? events) (set events) (hash-set events))}
+                          dispatch-fn (assoc :dispatch-fn dispatch-fn)
+                          (not dispatch-fn)  (assoc :dispatch-n (cond
+                                                                  dispatch-n dispatch-n
+                                                                  dispatch (list dispatch)
+                                                                  :else '()))))))))
 
+
+(defn- rules->dispatches
+  [rules event]
+  "Given an rule and event, return a sequence of dispatches. For each dispatch in the rule:
+    - if the dispatch is a keyword, return it as is
+    - if the dispatch is a function, call the function with the event"
+  (mapcat (fn [rule]
+            (let [{:keys [dispatch-fn dispatch-n]} rule]
+              (cond
+                dispatch-n dispatch-n
+                dispatch-fn (let [dispatch-n (dispatch-fn event)]
+                              (if (every? vector? dispatch-n)
+                                dispatch-n
+                                (re-frame/console :error "async-flow: dispatch-fn must return a seq of events " rule)))
+                :else '())))
+          rules))
 
 ;; -- Event Handler
 
@@ -175,7 +191,7 @@
               halt?           (some :halt? ready-rules)
               ready-rules-ids (->> ready-rules (map :id) set)
               new-rules-fired (set/union rules-fired ready-rules-ids)
-              new-dispatches  (mapcat :dispatch-n ready-rules)
+              new-dispatches  (rules->dispatches ready-rules forwarded-event)
               new-db          (set-state db new-seen-events new-rules-fired)]
           (merge
            {:db new-db}

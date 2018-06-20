@@ -194,3 +194,27 @@
              {:db                       {}
               :deregister-event-handler :blah
               :forward-events           {:unregister :blah}}))))
+
+(deftest test-function-handling
+  (let [flow {:first-dispatch [:start]
+              :id             :test-id
+              :db-path        [:p]
+              :rules [{:id 0 :when :seen? :events (fn [[e _]] (= e :1)) :dispatch [:2]}
+                      {:id 1 :when :seen? :events :3 :dispatch-fn (fn [[e data]] [[:4 data]])}]}
+        handler-fn  (core/make-flow-event-handler flow)]
+
+    ;; function in seen? should act as predicate
+    (is (= (handler-fn
+             {:db {:p {:seen-events #{}
+                       :rules-fired #{}}}}
+             [:test-id [:1]])
+           {:db         {:p {:seen-events #{[:1]} :rules-fired #{0}}}
+            :dispatch-n [[:2]]}))
+
+    ;; function in dispatch should be called to provide events in dispatch-n
+    (is (= (handler-fn
+             {:db {:p {:seen-events #{}
+                       :rules-fired #{}}}}
+             [:test-id [:3 :some-data]])
+           {:db                        {:p {:seen-events #{[:3 :some-data]} :rules-fired #{1}}}
+            :dispatch-n                [[:4 :some-data]]}))))
