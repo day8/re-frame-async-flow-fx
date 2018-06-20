@@ -30,7 +30,8 @@ keyed `:async-flow`. It has a declarative, data oriented design.
 #### TOC
 
 - [Quick Start Guide](#quick-start-guide)
-- [Problem Definition](#Problem-Definition)
+- [Testing](#testing)
+- [Problem Definition](#problem-definition)
 - [The Solution](#the-solution)
 - [Design Philosophy](#design-philosophy)
 
@@ -118,6 +119,30 @@ This event handler will do two things:
 Notice at that last line. This library provides the "effect handler" which implements `:async-flow`. It reads
 and actions the data structure returned by `(boot-flow)`.
 
+## Testing
+
+Unit tests use standard cljs.test
+
+To run tests with the `test.html` test runner in a browser
+
+```
+lein test-once # or
+lein test-auto
+```
+
+To run the tests with Karma
+
+```
+npm install karma-cli -g # install the global CLI Karma tool
+lein npm install # install Karma NPM dependencies
+```
+
+```sh
+lein karma-once # or
+lein karma-auto
+# and then
+karma start --single
+```
 
 ## Problem Definition
 
