@@ -12,7 +12,7 @@ module.exports = function (config) {
         ],
 
         client: {
-            args: ['day8.re_frame.async_flow_fx.test_runner.run_karma']
+            args: ['day8.re_frame.async_flow_fx_test_runner.run_karma']
         },
 
         // the default configuration

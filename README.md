@@ -373,8 +373,9 @@ The `:async-flow` data structure has the following fields:
     If absent, then state is not stored in app-db and is instead held in an internal atom.
     We prefer to store state in app-db because we like the philosophy of having all the data in the one place,
     but it is not essential.
-  - `first-dispatch` - mandatory - the event which initiates the async flow. This is often
+  - `first-dispatch` - optional - the event which initiates the async flow. This is often
     something like the event which will open a websocket or HTTP GET configuration from the server.
+	If omitted, it is up to you to organise the dispatch of any initial event(s).
   - `rules` - mandatory - a vector of maps. Each map is a `rule`.
 
 A `rule` is a map with the following fields:

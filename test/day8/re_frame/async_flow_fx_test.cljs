@@ -1,5 +1,7 @@
-(ns day8.re-frame.async-flow-fx.async-flow-fx-test
+(ns day8.re-frame.async-flow-fx-test
   (:require [cljs.test :refer-macros [is deftest]]
+						[re-frame.core :as rf]
+						[day8.re-frame.test :as rf-test]
             [day8.re-frame.async-flow-fx :as core]))
 
 
@@ -78,6 +80,35 @@
             :forward-events {:register     :some-id
                               :events      #{:1 :3}
                               :dispatch-to [:some-id]}}))))
+
+
+(deftest test-sans-first-dispatch
+	(rf-test/run-test-async
+		(let [dispatched-events  (atom #{})
+					note-event-handler (fn [_ event-v] (swap! dispatched-events conj event-v) {})
+					flow               {:id    ::some-flow-id
+															:rules [{:when :seen? :events ::1 :dispatch [::2]}
+																			{:when :seen? :events ::2 :dispatch [::3]}
+																			{:when :seen-all-of? :events [::1 ::2 ::3]
+																			 :dispatch [::flow-complete] :halt? true}]}
+					handler-fn         (core/make-flow-event-handler flow)]
+			;; Make flow handler should omit :dispatch when absent in flow
+			(is (= (handler-fn {:db {}} [::dummy-id :setup])
+						 {:db             {}
+							:forward-events {:register    ::some-flow-id
+															 :events      #{::1 ::2 ::3}
+															 :dispatch-to [::some-flow-id]}}))
+			;; Register flow which does not have :first-dispatch and kick off manually
+			(rf/reg-event-fx ::handler-with-flow-fx (fn [_ _] {:async-flow flow :dispatch [::1]}))
+			(rf/reg-event-fx ::1 note-event-handler)
+			(rf/reg-event-fx ::2 note-event-handler)
+			(rf/reg-event-fx ::3 note-event-handler)
+			(rf/reg-event-fx ::flow-complete note-event-handler)
+			(rf/dispatch [::handler-with-flow-fx])
+			(rf-test/wait-for
+				[::flow-complete]
+				(is (= @dispatched-events #{[::1] [::2] [::3] [::flow-complete]}))))))
+
 
 (deftest test-forwarding
   (let [flow {:first-dispatch [:start]
