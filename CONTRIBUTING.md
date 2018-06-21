@@ -11,7 +11,7 @@ the [ClojureScript mailing list](https://groups.google.com/forum/#!forum/clojure
 
 ## Pull requests
 
-**Create pull requests to the develop branch**, work will be merged onto master when it is ready to be released.
+**Create pull requests to the master branch**, work will be merged when it is ready to be released.
 
 ## Running tests
 
