@@ -21,7 +21,7 @@ or [component](https://github.com/stuartsierra/component),
 but it dovetails with, and leverages the event driven nature of re-frame's architecture. 
 
 Technically, this library implements an [Effect Handler](https://github.com/Day8/re-frame/tree/develop/docs), 
-keyed `:async-flow`. It has a declarative, data oriented design.
+keyed `::async-flow/bind`. It has a declarative, data oriented design.
 
 #### TOC
 
@@ -70,15 +70,13 @@ In the namespace where you register your event handlers, perhaps called `events.
 (ns app.events
   (:require
     ...
-    [day8.re-frame.async-flow-fx]   ;; <-- add this
+    [day8.re-frame.async-flow-fx :as async-flow]   ;; <-- add this
     ...))
 ```
-
-Because we never subsequently use this `require`, it
-appears redundant.  But its existence will cause the `:async-flow` effect
-handler to self-register with re-frame, which is important
+    
+This `require` will cause the effect handler to self-register with re-frame, which is important
 to everything that follows.
-
+    
 **Second**, write a function which returns a declarative description (as a data structure) of the async flow required, like this:
 ```clj
 (defn boot-flow
@@ -103,17 +101,17 @@ This event handler will do two things:
   2. It kicks off a multistep asynchronous flow
 
 ```clj
-(reg-event-fx                    ;; note the -fx
-  :boot                          ;; usage:  (dispatch [:boot])  See step 3
+(reg-event-fx                          ;; note the -fx
+  :boot                                ;; usage:  (dispatch [:boot])  See step 3
   (fn [_ _]
-    {:db (-> {}                  ;;  do whatever synchronous work needs to be done
-            task1-fn             ;; ?? set state to show "loading" twirly for user??
-            task2-fn)            ;; ?? do some other simple initialising of state
-     :async-flow  (boot-flow)})) ;; kick off the async process
+    {:db (-> {}                        ;;  do whatever synchronous work needs to be done
+            task1-fn                   ;; ?? set state to show "loading" twirly for user??
+            task2-fn)                  ;; ?? do some other simple initialising of state
+     ::async-flow/bind  (boot-flow)})) ;; kick off the async process. Note the use of alias.
 ```
-
-Notice at that last line. This library provides the "effect handler" which implements `:async-flow`. It reads
-and actions the data structure returned by `(boot-flow)`.
+    
+Notice at that last line. This library provides the "effect handler" which implements `::async-flow/bind`. It reads
+and actions the data structure returned by `(boot-flow)`. Note the alias is dictated by the alias you use in the require.
 
 ## Testing
 
@@ -356,7 +354,7 @@ Further Notes:
 
 ### The Flow Specification
 
-The `:async-flow` data structure has the following fields:
+The `::async-flow/bind` data structure has the following fields:
 
   - `:id` - optional - an identifier, typically a namespaced keyword. Each flow should have a unique id.
     Must not clash with the identifier for any event handler (because internally

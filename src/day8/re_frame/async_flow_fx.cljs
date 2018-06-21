@@ -178,7 +178,6 @@
 
 ;; -- Effect handler
 
-
 (defn flow->handler
   "Action the given flow effect"
   [flow]
@@ -187,5 +186,5 @@
     (re-frame/dispatch [id :setup])))                            ;; kicks things off
 
 (re-frame/reg-fx
-  :async-flow
+  ::bind
   flow->handler)

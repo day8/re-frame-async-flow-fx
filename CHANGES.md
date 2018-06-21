@@ -3,6 +3,17 @@
 #### NEW
    - Add :dispatch-fn to the rule specification. [#20](https://github.com/Day8/re-frame-async-flow-fx/pull/20) see ["Advanced use"](https://github.com/Day8/re-frame-async-flow-fx#advanced-use) in readme
    - Make :first-dispatch optional [#12](https://github.com/Day8/re-frame-async-flow-fx/issues/12)
+   - Namespace fx `:async-flow` becomes `::bind` as requested in [#13](https://github.com/Day8/re-frame-async-flow-fx/issues/13) **BREAKING**  Use full ns or alias in event fx  e.g.
+
+    ```clj
+    (ns app.events
+      (:require [day8.re-frame.async-flow-fx :as async-flow]))
+    ```
+    > Then in event fx
+
+    ```clj
+     {::async-flow/bind {....}}
+    ```
 
 ## v0.0.7  (2017.07.09)
    - remove :halt-flow dispatch
