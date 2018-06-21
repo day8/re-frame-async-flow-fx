@@ -174,10 +174,10 @@
         ;;   2. dispatch the first event, to kick start flow (optional)
         ;;   3. arrange for the events to be forwarded to this handler
         :setup (merge {:db             (set-state db #{} #{})
-											 :forward-events {:register    id
-																				:events      (apply set/union (map :events rules))
-																				:dispatch-to [id]}}
-											(when first-dispatch {:dispatch first-dispatch}))
+                       :forward-events {:register    id
+                                        :events      (apply set/union (map :events rules))
+                                        :dispatch-to [id]}}
+                      (when first-dispatch {:dispatch first-dispatch}))
 
         ;; Here we are managing the flow.
         ;; A new event has been forwarded, so work out what should happen:
