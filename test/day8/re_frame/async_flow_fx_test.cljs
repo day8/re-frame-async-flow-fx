@@ -110,6 +110,33 @@
         (is (= @dispatched-events #{[::1] [::2] [::3] [::flow-complete]}))))))
 
 
+(deftest test-timeout
+  (rf-test/run-test-async
+    (let [dispatched-events  (atom #{})
+          note-event-handler (fn [_ event-v] (swap! dispatched-events conj event-v) {})
+          flow               {:id      ::flow-with-timeout
+                              :timeout [{:ms 1000 :dispatch [::timed-out]}]
+                              :rules   [{:when :seen? :events ::1 :dispatch [::2]}
+                                        {:when :seen? :events ::2 :dispatch [::3]}
+                                        {:when     :seen-all-of? :events [::1 ::2 ::3 ::never-fires]
+                                         :dispatch [::flow-complete] :halt? true}]}]
+      ;; Register flow and wait for timeout
+      (rf/reg-event-fx ::handler-with-flow-fx (fn [_ _] {:async-flow flow :dispatch [::1]}))
+      (rf/reg-event-fx ::1 note-event-handler)
+      (rf/reg-event-fx ::2 note-event-handler)
+      (rf/reg-event-fx ::3 note-event-handler)
+      (rf/reg-event-fx ::never-fires note-event-handler)
+      (rf/reg-event-fx ::flow-complete note-event-handler)
+      (rf/reg-event-fx ::timed-out note-event-handler)
+      (rf/dispatch [::handler-with-flow-fx])
+      (rf-test/wait-for
+        [::timed-out]
+        ; note1: ::never-fires and ::flow-complete never happened.
+        ; note2: flow is not automatically torn down. It is up to implementor (rules) to
+        ;        optionally finish flow on an timeout
+        (is (= @dispatched-events #{[::1] [::2] [::3] [::timed-out]}))))))
+
+
 (deftest test-forwarding
   (let [flow {:first-dispatch [:start]
               :id             :test-id

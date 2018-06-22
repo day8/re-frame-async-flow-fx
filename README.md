@@ -356,23 +356,28 @@ Further Notes:
 
 ### The Flow Specification
 
-The `:async-flow` data structure has the following fields:
+The flow data structure has the following properties:
 
   - `:id` - optional - an identifier, typically a namespaced keyword. Each flow should have a unique id.
     Must not clash with the identifier for any event handler (because internally
     an event handler is registered using this id).
     If absent, `:async/flow` is used.
-    If this default is used then two flows can't be running at once because they'd be using the same id.
+    
+    **Warning** if the default is used, or you are using more then one flow with the same :id,
+    these flows can't be running at once because they'd be using the same id.
 
-  - `db-path` - optional - the path within `app-db` where the coordination logic should store state. Two pieces
+  - `:db-path` - optional - the path within `app-db` where the coordination logic should store state. Two pieces
      of state are stored:  the set of seen events, and the set of started tasks.
     If absent, then state is not stored in app-db and is instead held in an internal atom.
     We prefer to store state in app-db because we like the philosophy of having all the data in the one place,
     but it is not essential.
-  - `first-dispatch` - optional - the event which initiates the async flow. This is often
+  - `:first-dispatch` - optional - the event which initiates the async flow. This is often
     something like the event which will open a websocket or HTTP GET configuration from the server.
 	If omitted, it is up to you to organise the dispatch of any initial event(s).
-  - `rules` - mandatory - a vector of maps. Each map is a `rule`.
+  - `:timeout` - optional vector of maps each {:ms n :dispatch event-v} where n is number of milliseconds for event-v
+     to fire. It is up to your normal flow *:rules* to decide if to halt and tear down the flow. Further, the timeout 
+    event will fire regardless, and in turn could well be after the flow has completed.
+  - `:rules` - mandatory - a vector of maps. Each map is a `rule`.
 
 A `rule` is a map with the following fields:
 
