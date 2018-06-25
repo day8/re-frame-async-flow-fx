@@ -4,6 +4,9 @@
             [day8.re-frame.test :as rf-test]
             [day8.re-frame.async-flow-fx :as core]))
 
+;; Contributors: Be careful to use unique events and ids to avoid collisions
+;; since this test environment could have more then one flow running.
+
 
 (deftest test-all-events-seen?
   (is (= (core/seen-all-of? #{:a} #{[:a]}) true))
@@ -87,27 +90,27 @@
     (let [dispatched-events  (atom #{})
           note-event-handler (fn [_ event-v] (swap! dispatched-events conj event-v) {})
           flow               {:id    ::some-flow-id
-                              :rules [{:when :seen? :events ::1 :dispatch [::2]}
-                                      {:when :seen? :events ::2 :dispatch [::3]}
-                                      {:when     :seen-all-of? :events [::1 ::2 ::3]
-                                       :dispatch [::flow-complete] :halt? true}]}
+                              :rules [{:when :seen? :events ::s1 :dispatch [::s2]}
+                                      {:when :seen? :events ::s2 :dispatch [::s3]}
+                                      {:when     :seen-all-of? :events [::s1 ::s2 ::s3]
+                                       :dispatch [::flow-complete1] :halt? true}]}
           handler-fn         (core/make-flow-event-handler flow)]
       ;; Make flow handler should omit :dispatch when absent in flow
       (is (= (handler-fn {:db {}} [::dummy-id :setup])
              {:db             {}
               :forward-events {:register    ::some-flow-id
-                               :events      #{::1 ::2 ::3}
+                               :events      #{::s1 ::s2 ::s3}
                                :dispatch-to [::some-flow-id]}}))
       ;; Register flow which does not have :first-dispatch and kick off manually
-      (rf/reg-event-fx ::handler-with-flow-fx (fn [_ _] {:async-flow flow :dispatch [::1]}))
-      (rf/reg-event-fx ::1 note-event-handler)
-      (rf/reg-event-fx ::2 note-event-handler)
-      (rf/reg-event-fx ::3 note-event-handler)
-      (rf/reg-event-fx ::flow-complete note-event-handler)
-      (rf/dispatch [::handler-with-flow-fx])
+      (rf/reg-event-fx ::handler-with-flow-fx1 (fn [_ _] {:async-flow flow :dispatch [::s1]}))
+      (rf/reg-event-fx ::s1 note-event-handler)
+      (rf/reg-event-fx ::s2 note-event-handler)
+      (rf/reg-event-fx ::s3 note-event-handler)
+      (rf/reg-event-fx ::flow-complete1 note-event-handler)
+      (rf/dispatch [::handler-with-flow-fx1])
       (rf-test/wait-for
-        [::flow-complete]
-        (is (= @dispatched-events #{[::1] [::2] [::3] [::flow-complete]}))))))
+        [::flow-complete1]
+        (is (= @dispatched-events #{[::s1] [::s2] [::s3] [::flow-complete1]}))))))
 
 
 (deftest test-timeout
@@ -115,33 +118,31 @@
     (let [dispatched-events  (atom #{})
           state-on-timeout   (atom nil)
           note-event-handler (fn [_ event-v] (swap! dispatched-events conj event-v) {})
-          flow               {:id             ::flow-with-timeout
-                              :first-dispatch [::1]
-                              :timeout        [{:ms 1100 :dispatch [::timed-out]}]
-                              :rules          [{:when :seen? :events ::1 :dispatch [::2]}
-                                               {:when :seen? :events ::2 :dispatch [::3]}
-                                               {:when     :seen-all-of? :events [::1 ::2 ::3 ::never-fires]
-                                                :dispatch [::flow-complete] :halt? true}
-                                               {:when :seen? :events [[::halt-on-timeout]] :halt? true}]}
+          flow               {:first-dispatch [::t1]
+                              :timeout        [{:ms 1100 :dispatch [::timed-out1]}]
+                              :rules          [{:when :seen? :events ::t1 :dispatch [::t2]}
+                                               {:when :seen? :events ::t2 :dispatch [::t3]}
+                                               {:when     :seen-all-of? :events [::t1 ::t2 ::t3 ::never-fires]
+                                                :dispatch [::flow-complete2] :halt? true}
+                                               {:when :seen? :events [[::halt-on-timeout1]] :halt? true}]}
           gen-flow           (core/make-flow-event-handler flow)]
       ;; Confirm flow includes :dispatch-n vec
       (is (-> (gen-flow {:db {}} [::dummy-id :setup]) (get :dispatch-later) vector))
       ;; Register flow and wait for timeout
-      (rf/reg-event-fx ::handler-with-flow-fx (fn [_ _] {:async-flow flow}))
-      (rf/reg-event-fx ::1 note-event-handler)
-      (rf/reg-event-fx ::2 note-event-handler)
-      (rf/reg-event-fx ::3 note-event-handler)
+      (rf/reg-event-fx ::handler-with-flow-fx2 (fn [_ _] {:async-flow flow}))
+      (rf/reg-event-fx ::t1 note-event-handler)
+      (rf/reg-event-fx ::t2 note-event-handler)
+      (rf/reg-event-fx ::t3 note-event-handler)
       (rf/reg-event-fx ::never-fires note-event-handler)
-      (rf/reg-event-fx ::flow-complete note-event-handler)
-      (rf/reg-event-fx ::halt-on-timeout note-event-handler)
-      (rf/reg-event-fx
-        ::timed-out
-        (fn [{:keys [db]} [event-kw state :as event-v]]
-          (reset! state-on-timeout (deref state))
-          (note-event-handler db event-v)))
-      (rf/dispatch [::handler-with-flow-fx])
+      (rf/reg-event-fx ::flow-complete2 note-event-handler)
+      (rf/reg-event-fx ::halt-on-timeout1 note-event-handler)
+      (rf/reg-event-fx ::timed-out1
+                       (fn [{:keys [db]} [event-kw state :as event-v]]
+                         (reset! state-on-timeout (deref state))
+                         (note-event-handler db event-v)))
+      (rf/dispatch [::handler-with-flow-fx2])
       (rf-test/wait-for
-        [::timed-out]
+        [::timed-out1]
         ; note1: ::never-fires and ::flow-complete never happened.
         ; note2: flow is not automatically torn down. It is up to implementor (rules) to
         ;        optionally finish flow on an timeout
@@ -149,9 +150,9 @@
         ;        passed to the timeout event handler, otherwise a ref to the local flow state
         ;        is passed as first arg in the form of a delay and can be dereferenced in the
         ;        timeout event handler to see if the flow completed or not.
-        (is (= (->> @dispatched-events (map first) set) #{::1 ::2 ::3 ::timed-out}))
+        (is (= (->> @dispatched-events (map first) set) #{::t1 ::t2 ::t3 ::timed-out1}))
         (is (= #{0 1} (get @state-on-timeout :rules-fired)))
-        (is (= #{::1 ::2 ::3} (->> (get @state-on-timeout :seen-events) (map first) set)))))))
+        (is (= #{::t1 ::t2 ::t3} (->> (get @state-on-timeout :seen-events) (map first) set)))))))
 
 
 (deftest test-timeout-after-halt
@@ -167,29 +168,28 @@
     (let [dispatched-events  (atom #{})
           state-on-timeout   (atom nil)
           note-event-handler (fn [_ event-v] (swap! dispatched-events conj event-v) {})
-          flow               {:id             ::flow-with-timeout
-                              :first-dispatch [::1]
-                              :timeout        [{:ms 1100 :dispatch [::timed-out]}]
-                              :rules          [{:when :seen? :events ::1 :dispatch [::2]}
-                                               {:when :seen? :events ::2 :dispatch [::3]}
-                                               {:when     :seen-all-of? :events [::1 ::2 ::3]
-                                                :dispatch [::flow-complete] :halt? true}]}]
+          flow               {:first-dispatch [::h1]
+                              :timeout        [{:ms 1100 :dispatch [::timed-out2]}]
+                              :rules          [{:when :seen? :events ::h1 :dispatch [::h2]}
+                                               {:when :seen? :events ::h2 :dispatch [::h3]}
+                                               {:when     :seen-all-of? :events [::h1 ::h2 ::h3]
+                                                :dispatch [::flow-complete3] :halt? true}]}]
       ;; Register flow and wait for timeout
       (rf/reg-event-fx ::handler-with-flow-fx (fn [_ _] {:async-flow flow}))
-      (rf/reg-event-fx ::1 note-event-handler)
-      (rf/reg-event-fx ::2 note-event-handler)
-      (rf/reg-event-fx ::3 note-event-handler)
-      (rf/reg-event-fx ::flow-complete note-event-handler)
-      (rf/reg-event-fx ::timed-out (fn [{:keys [db]} [event-kw state :as event-v]]
+      (rf/reg-event-fx ::h1 note-event-handler)
+      (rf/reg-event-fx ::h2 note-event-handler)
+      (rf/reg-event-fx ::h3 note-event-handler)
+      (rf/reg-event-fx ::flow-complete3 note-event-handler)
+      (rf/reg-event-fx ::timed-out2 (fn [{:keys [db]} [event-kw state :as event-v]]
                                      (reset! state-on-timeout (deref state))
                                      (note-event-handler db event-v)))
       (rf/dispatch [::handler-with-flow-fx])
       (rf-test/wait-for
-        [::timed-out]
-        ; note: ::flow-complete occurs which is a halt rule. Unlike prior test-timeout case which never com.
-        (is (= (->> @dispatched-events (map first) set) #{::1 ::2 ::3 ::flow-complete ::timed-out}))
+        [::timed-out2]
+        ; note: ::flow-complete3 occurs which is a halt rule. Unlike prior test-timeout case which never com.
+        (is (= (->> @dispatched-events (map first) set) #{::h1 ::h2 ::h3 ::flow-complete3 ::timed-out2}))
         (is (= #{0 1 2} (get @state-on-timeout :rules-fired)))
-        (is (= #{::1 ::2 ::3} (->> (get @state-on-timeout :seen-events) (map first) set)))))))
+        (is (= #{::h1 ::h2 ::h3} (->> (get @state-on-timeout :seen-events) (map first) set)))))))
 
 
 (deftest test-forwarding
