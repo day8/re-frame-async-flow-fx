@@ -161,13 +161,12 @@
         rules       (massage-rules rules)]       ;; all of the events referred to in the rules
 
     ;; Return an event handler which will manage the flow.
-    ;; This event handler will receive 3 kinds of events:
+    ;; This event handler will receive 2 kinds of events:
     ;;   (dispatch [:id :setup])
-    ;;   (dispatch [:id :halt-flow])
     ;;   (dispatch [:id [:forwarded :event :vector]])
     ;;
-    ;; This event handler returns a map of effects - it expects to be registered using
-    ;; reg-event-fx
+    ;; This event handler returns a map of effects to be registered via
+    ;; reg-event-fx see flow->handler
     ;;
     (fn async-flow-event-handler
       [{:keys [db]} [_ event-type :as event-v]]
