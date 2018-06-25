@@ -374,9 +374,16 @@ The flow data structure has the following properties:
   - `:first-dispatch` - optional - the event which initiates the async flow. This is often
     something like the event which will open a websocket or HTTP GET configuration from the server.
 	If omitted, it is up to you to organise the dispatch of any initial event(s).
-  - `:timeout` - optional vector of maps each {:ms n :dispatch event-v} where n is number of milliseconds for event-v
-     to fire. It is up to your normal flow *:rules* to decide if to halt and tear down the flow. Further, the timeout 
-    event will fire regardless, and in turn could well be after the flow has completed.
+  - `:timeout` - optional vector of maps each `{:ms n :dispatch event-v}` where n is number of milliseconds to wait
+    for event-v to fire. </br></br>
+
+    > It is up to the specified timeout handler(s) and your normal flow *:rules* to decide if to halt and tear
+    down the flow. Further, the timeout event will fire regardless, and in turn could well be after the flow has completed. 
+    If you are using db-path, your timeout handler can query the flow state there, alternatively, the event(s) will have
+    a delay injected as the the last arg which your handler can deref. Possibly stating the obvious, but since this is
+    a delay, your handler should deref and decide as soon as possible, after all "time is ticking" uggh. 
+    If you handler does decide to halt the flow, it should do so by dispatching one of the existing
+    halt rules. See `test-timeout` & `test-timeout-after-halt` in test/day8.re-frame.async-flow-fx-test
   - `:rules` - mandatory - a vector of maps. Each map is a `rule`.
 
 A `rule` is a map with the following fields:
@@ -431,7 +438,7 @@ For example, when uploading a file, a success event may return an id which needs
  :dispatch-fn (fn [[e id]] [[:remote/file-uploaded id]])}
 ```
 
-Or, to to dispatch a server error event if a status of 500 or above has been seen
+Or, to dispatch a server error event if a status of 500 or above has been seen
 
 ```clj
 {:when :seen? :events (fn [[e status]] (and (= e :http/response-received) (>= status 500)))

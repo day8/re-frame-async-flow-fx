@@ -180,7 +180,12 @@
                                         :events      (apply set/union (map :events rules))
                                         :dispatch-to [id]}}
                       (when first-dispatch {:dispatch first-dispatch})
-                      (when timeout {:dispatch-later timeout}))
+                      (when timeout
+                        {:dispatch-later (if db-path
+                                           timeout
+                                           (mapv
+                                             (fn [t-m] (update t-m :dispatch #(conj % (delay @local-store))))
+                                             timeout))}))
 
         ;; Here we are managing the flow.
         ;; A new event has been forwarded, so work out what should happen:
