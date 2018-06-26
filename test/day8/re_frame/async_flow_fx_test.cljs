@@ -99,7 +99,7 @@
                                :events      #{::1 ::2 ::3}
                                :dispatch-to [::some-flow-id]}}))
       ;; Register flow which does not have :first-dispatch and kick off manually
-      (rf/reg-event-fx ::handler-with-flow-fx (fn [_ _] {::core/bind flow :dispatch [::1]}))
+      (rf/reg-event-fx ::handler-with-flow-fx (fn [_ _] {:async-flow flow :dispatch [::1]}))
       (rf/reg-event-fx ::1 note-event-handler)
       (rf/reg-event-fx ::2 note-event-handler)
       (rf/reg-event-fx ::3 note-event-handler)
