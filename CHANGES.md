@@ -1,9 +1,12 @@
 ## Unreleased
 
-#### NEW
+#### New
    - Add  :dispatch-fn to the rule specification. [#20](https://github.com/Day8/re-frame-async-flow-fx/pull/20) see ["Advanced use"](https://github.com/Day8/re-frame-async-flow-fx#advanced-use) in readme
    - Make :first-dispatch optional [#12](https://github.com/Day8/re-frame-async-flow-fx/issues/12)
    - Add  :timeout optional [#2](https://github.com/Day8/re-frame-async-flow-fx/issues/2)
+
+#### Maintenance
+   - Remove conflicting :forward-events now in orig repo PR #22
 
 ## v0.0.7  (2017.07.09)
    - remove :halt-flow dispatch

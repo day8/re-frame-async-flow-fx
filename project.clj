@@ -5,7 +5,7 @@
   :dependencies [[org.clojure/clojure        "1.8.0"  :scope "provided"]
                  [org.clojure/clojurescript  "1.9.89" :scope "provided"]
                  [re-frame                   "0.8.0"  :scope "provided"]
-                 [day8.re-frame/forward-events-fx "0.0.5"]]
+                 [day8.re-frame/forward-events-fx "0.0.6"]]
 
   :profiles {:debug {:debug true}
              :dev   {:dependencies [[karma-reporter     "1.0.1"]
