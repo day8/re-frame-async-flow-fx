@@ -380,7 +380,7 @@ The flow data structure has the following properties:
     > It is up to the specified timeout handler(s) and your normal flow *:rules* to decide if to halt and tear
     down the flow. Further, the timeout event will fire regardless, and in turn could well be after the flow has completed. 
     If you are using db-path, your timeout handler can query the flow state there, alternatively, the event(s) will have
-    a delay injected as the the last arg which your handler can deref. Possibly stating the obvious, but since this is
+    a delay injected as the last arg which your handler can deref. Possibly stating the obvious, but since this is
     a delay, your handler should deref and decide as soon as possible, after all "time is ticking" uggh. 
     If you handler does decide to halt the flow, it should do so by dispatching one of the existing
     halt rules. See `test-timeout` & `test-timeout-after-halt` in test/day8.re-frame.async-flow-fx-test
