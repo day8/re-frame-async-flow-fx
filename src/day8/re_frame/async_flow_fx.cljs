@@ -98,13 +98,16 @@
 
 (defn make-flow-event-handler
   "Given a flow definition, returns an event handler which implements this definition"
-  [{:keys [id db-path rules first-dispatch]}]
+  [{:keys [id db-path rules first-dispatch timeout]}]
   (let [
         ;; Subject to db-path, state is either stored in app-db or in a local atom
         ;; Two pieces of state are maintained:
         ;;  - the set of seen events
         ;;  - the set of started tasks
+        ;;  - the set of timeouts (optional)
         _           (assert (or (nil? db-path) (vector? db-path)) "async-flow: db-path must be a vector")
+        _           (assert (or (nil? timeout) (vector? timeout))
+                            "async-flow: timeout must be a vector of {:ms n :dispatch event-v}")
         local-store (atom {})
         set-state   (if db-path
                       (fn [db seen started]
@@ -119,13 +122,12 @@
         rules       (massage-rules rules)]       ;; all of the events referred to in the rules
 
     ;; Return an event handler which will manage the flow.
-    ;; This event handler will receive 3 kinds of events:
+    ;; This event handler will receive 2 kinds of events:
     ;;   (dispatch [:id :setup])
-    ;;   (dispatch [:id :halt-flow])
     ;;   (dispatch [:id [:forwarded :event :vector]])
     ;;
-    ;; This event handler returns a map of effects - it expects to be registered using
-    ;; reg-event-fx
+    ;; This event handler returns a map of effects to be registered via
+    ;; reg-event-fx see flow->handler
     ;;
     (fn async-flow-event-handler
       [{:keys [db]} [_ event-type :as event-v]]
@@ -138,7 +140,13 @@
                        :forward-events {:register    id
                                         :events      (apply set/union (map :events rules))
                                         :dispatch-to [id]}}
-                      (when first-dispatch {:dispatch first-dispatch}))
+                      (when first-dispatch {:dispatch first-dispatch})
+                      (when timeout
+                        {:dispatch-later (if db-path
+                                           timeout
+                                           (mapv
+                                             (fn [t-m] (update t-m :dispatch #(conj % (delay @local-store))))
+                                             timeout))}))
 
         ;; Here we are managing the flow.
         ;; A new event has been forwarded, so work out what should happen:
