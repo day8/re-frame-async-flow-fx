@@ -148,7 +148,7 @@
         ;        optionally finish flow on an timeout
         ; note3: If flow uses db-path, then the flow state is available there within the db
         ;        passed to the timeout event handler, otherwise a ref to the local flow state
-        ;        is passed as first arg in the form of a delay and can be dereferenced in the
+        ;        is passed as last event arg, via a delay and can be dereferenced in the
         ;        timeout event handler to see if the flow completed or not.
         (is (= (->> @dispatched-events (map first) set) #{::t1 ::t2 ::t3 ::timed-out1}))
         (is (= #{0 1} (get @state-on-timeout :rules-fired)))
@@ -159,7 +159,7 @@
   ;; Since timeout uses :dispatch-later, then the event (s) will always fire,
   ;; even when the flow may have already halted successfully or failed.
   ;; So that the handler can decide what to do at the time of the timeout,
-  ;; it is handed a delay to the flow state (when db-path is not specified) .
+  ;; it is handed a delay to the flow state (when db-path is not specified).
   ;; With this it can decide if the flow has already completed or not and in
   ;; turn choose if it wants to halt the flow or not.
   ;; If the handler chooses to halt, it should do so by dispatching one of
