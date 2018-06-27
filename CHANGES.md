@@ -1,4 +1,4 @@
-## Unreleased
+## v0.0.11  (2018.06.27)
 
 #### New
    - Add :dispatch-fn to the rule specification. [#20](https://github.com/Day8/re-frame-async-flow-fx/pull/20) see ["Advanced use"](https://github.com/Day8/re-frame-async-flow-fx#advanced-use) in readme
