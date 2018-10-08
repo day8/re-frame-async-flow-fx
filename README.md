@@ -426,7 +426,7 @@ For example, when uploading a file, a success event may return an id which needs
  :dispatch-fn (fn [[e id]] [[:remote/file-uploaded id]])}
 ```
 
-Or, to to dispatch a server error event if a status of 500 or above has been seen
+Or, to dispatch a server error event if a status of 500 or above has been seen
 
 ```clj
 {:when :seen? :events (fn [[e status]] (and (= e :http/response-received) (>= status 500)))
