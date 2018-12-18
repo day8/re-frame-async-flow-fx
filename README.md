@@ -446,7 +446,7 @@ One way or another you'll be implementing a state machine. There's no getting aw
 Although there are ways of hiding it!! Redux-saga uses ES6 generator functions to provide the illusion of a
 synchronous control flow. The "state machine" is encoded directly into the generator function's
 statements (sequentially, or via `if` `then` `else` logic, or via `loops`). And that's a nice
-and simple abstraction for many cases.
+and simple abstraction for many cases. This equivalence between a statem machine and generator functions is further described [here](http://250bpm.com/blog:141).
 
 But, as always, there are trade-offs.
 
