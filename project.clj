@@ -10,7 +10,7 @@
   :profiles {:debug {:debug true}
              :dev   {:dependencies [[karma-reporter "3.1.0"]
                                     [day8.re-frame/test "0.1.5"]
-                                    [binaryage/devtools "0.8.1"]]
+                                    [binaryage/devtools "0.9.10"]]
                      :plugins      [[lein-ancient "0.6.10"]
                                     [lein-cljsbuild "1.1.4"]
                                     [lein-npm "0.6.2"]
