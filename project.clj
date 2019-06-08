@@ -12,7 +12,7 @@
                                     [day8.re-frame/test "0.1.5"]
                                     [binaryage/devtools "0.9.10"]]
                      :plugins      [[lein-ancient "0.6.15"]
-                                    [lein-cljsbuild "1.1.4"]
+                                    [lein-cljsbuild "1.1.7"]
                                     [lein-npm "0.6.2"]
                                     [lein-shell "0.5.0"]]}}
 
