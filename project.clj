@@ -3,7 +3,7 @@
   :url          "https://github.com/Day8/re-frame-async-flow-fx.git"
   :license      {:name "MIT"}
   :dependencies [[org.clojure/clojure        "1.8.0"  :scope "provided"]
-                 [org.clojure/clojurescript  "1.9.89" :scope "provided"]
+                 [org.clojure/clojurescript  "1.10.520" :scope "provided"]
                  [re-frame                   "0.8.0"  :scope "provided"]
                  [day8.re-frame/forward-events-fx "0.0.6"]]
 
