@@ -8,13 +8,13 @@
                  [day8.re-frame/forward-events-fx "0.0.6"]]
 
   :profiles {:debug {:debug true}
-             :dev   {:dependencies [[karma-reporter     "1.0.1"]
-																		[day8.re-frame/test "0.1.5"]
+             :dev   {:dependencies [[karma-reporter "3.1.0"]
+                                    [day8.re-frame/test "0.1.5"]
                                     [binaryage/devtools "0.8.1"]]
-                     :plugins      [[lein-ancient       "0.6.10"]
-																		[lein-cljsbuild     "1.1.4"]
-                                    [lein-npm           "0.6.2"]
-                                    [lein-shell         "0.5.0"]]}}
+                     :plugins      [[lein-ancient "0.6.10"]
+                                    [lein-cljsbuild "1.1.4"]
+                                    [lein-npm "0.6.2"]
+                                    [lein-shell "0.5.0"]]}}
 
   :clean-targets  [:target-path "run/compiled"]
 
@@ -50,7 +50,7 @@
                         :source-paths ["test" "src"]
                         :compiler     {:preloads        [devtools.preload]
                                        :external-config {:devtools/config {:features-to-install :all}}
-																			 :output-to     "run/compiled/browser/test.js"
+                                       :output-to     "run/compiled/browser/test.js"
                                        :source-map    true
                                        :output-dir    "run/compiled/browser/test"
                                        :optimizations :none
