@@ -62,7 +62,7 @@
                                        :source-map    "run/compiled/karma/test.js.map"
                                        :output-dir    "run/compiled/karma/test"
                                        :optimizations :whitespace
-                                       :main          "re_frame_async_flow_fx.test_runner"
+                                       :main          "day8.re_frame.async_flow_fx_test_runner"
                                        :pretty-print  true}}]}
 
   :aliases {"test-once"   ["do" "clean," "cljsbuild" "once" "test," "shell" "open" "test/test.html"]
