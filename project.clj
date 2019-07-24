@@ -4,7 +4,7 @@
   :license      {:name "MIT"}
   :dependencies [[org.clojure/clojure        "1.10.1"  :scope "provided"]
                  [org.clojure/clojurescript  "1.10.520" :scope "provided"]
-                 [re-frame                   "0.10.6"  :scope "provided"]
+                 [re-frame                   "0.10.8"  :scope "provided"]
                  [day8.re-frame/forward-events-fx "0.0.6"]]
 
   :profiles {:debug {:debug true}
