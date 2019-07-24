@@ -1,0 +1,16 @@
+{:lein   true
+
+ :nrepl  {:port 8777}
+
+ :builds {:browser-test
+          {:target    :browser-test
+           :ns-regexp "-test$"
+           :runner-ns shadow.test.browser
+           :test-dir  "resources/public/js/test"
+           :devtools  {:http-root "resources/public/js/test"
+                       :http-port 8290}}
+
+          :ci
+          {:target    :karma
+           :ns-regexp "-test$"
+           :output-to "target/ci.js"}}}

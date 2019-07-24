@@ -119,25 +119,17 @@ and actions the data structure returned by `(boot-flow)`.
 
 Unit tests use standard cljs.test
 
-To run tests with the `test.html` test runner in a browser
+To run tests in a browser
 
 ```
-lein test-once # or
-lein test-auto
+lein dev
 ```
 
 To run the tests with Karma
 
 ```
 npm install karma-cli -g # install the global CLI Karma tool
-lein npm install # install Karma NPM dependencies
-```
-
-```sh
-lein karma-once # or
-lein karma-auto
-# and then
-karma start --single
+lein ci 
 ```
 
 ## Problem Definition

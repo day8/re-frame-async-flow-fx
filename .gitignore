@@ -17,3 +17,4 @@ misc/
 .floo
 .flooignore
 node_modules/
+.shadow-cljs/
