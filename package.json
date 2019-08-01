@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "karma": "^4.1.0",
+    "karma": "^4.2.0",
     "karma-chrome-launcher": "^3.0.0",
     "karma-cljs-test": "^0.1.0",
     "karma-junit-reporter": "^1.2.0",
@@ -11,6 +11,7 @@
     "react": "^16.8.6",
     "react-dom": "^16.8.6"
   },
+  "name": "day8.re-frame.async-flow-fx",
   "repository": "git@github.com:Day8/re-frame-async-flow-fx.git",
   "license": "MIT"
 }
