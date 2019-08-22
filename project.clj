@@ -7,7 +7,7 @@
                   :exclusions [com.google.javascript/closure-compiler-unshaded
                                org.clojure/google-closure-library]]
                  [thheller/shadow-cljs "2.8.51" :scope "provided"]
-                 [re-frame "0.10.8" :scope "provided"]
+                 [re-frame "0.10.9" :scope "provided"]
                  [day8.re-frame/forward-events-fx "0.0.6"]]
 
   :profiles {:debug {:debug true}
