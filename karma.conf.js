@@ -4,7 +4,7 @@ module.exports = function (config) {
   config.set({
     browsers: ['ChromeHeadless'],
     basePath: 'target',
-    files: ['ci.js'],
+    files: ['karma-test.js'],
     frameworks: ['cljs-test'],
     plugins: [
         'karma-cljs-test',

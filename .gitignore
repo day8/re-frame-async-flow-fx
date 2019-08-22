@@ -18,3 +18,6 @@ misc/
 .flooignore
 node_modules/
 .shadow-cljs/
+shadow-cljs.edn
+package.json
+resources/public/js
