@@ -4,7 +4,7 @@
     "karma-chrome-launcher": "^3.0.0",
     "karma-cljs-test": "^0.1.0",
     "karma-junit-reporter": "^1.2.0",
-    "shadow-cljs": "^2.8.48"
+    "shadow-cljs": "^2.8.51"
   },
   "dependencies": {
     "create-react-class": "^15.6.3",
