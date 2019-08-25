@@ -19,7 +19,12 @@
                      :plugins      [[lein-ancient "0.6.15"]
                                     [lein-shell "0.5.0"]]}}
 
-  :clean-targets  [:target-path "run/compiled"]
+  :clean-targets  [:target-path
+                   "resources/public/js/test"
+                   ".shadow-cljs"
+                   "shadow-cljs.edn"
+                   "package.json"
+                   "package-lock.json"]
 
   :resource-paths ["run/resources"]
   :jvm-opts       ["-Xmx1g"]
