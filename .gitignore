@@ -16,8 +16,9 @@ compiled/
 misc/
 .floo
 .flooignore
-node_modules/
-.shadow-cljs/
-shadow-cljs.edn
-package.json
+/node_modules/
+/.shadow-cljs/
+/shadow-cljs.edn
+/package.json
+/package-lock.json
 resources/public/js
