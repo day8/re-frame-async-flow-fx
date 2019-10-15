@@ -1,10 +1,10 @@
 
-[![GitHub license](https://img.shields.io/github/license/Day8/re-frame-async-flow-fx.svg)](LICENSE)
-[![Circle CI](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/Day8/re-frame-async-flow-fx/tree/master)
+[![GitHub license](https://img.shields.io/github/license/day8/re-frame-async-flow-fx.svg)](LICENSE)
+[![Circle CI](https://circleci.com/gh/day8/re-frame-async-flow-fx/tree/master.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/day8/re-frame-async-flow-fx/tree/master)
 
 ## Async Control Flow In re-frame
 
-This [re-frame library](https://github.com/Day8/re-frame) coordinates a set of
+This [re-frame library](https://github.com/day8/re-frame) coordinates a set of
 asynchronous, stateful tasks which have dependencies (and consequently need to be ordered).
 
 Using this library, you can **coordinate the kind of asynchronous control flow** which 
@@ -20,7 +20,7 @@ So, it has a similar intent to [mount](https://github.com/tolitius/mount)
 or [component](https://github.com/stuartsierra/component),
 but it dovetails with, and leverages the event driven nature of re-frame's architecture. 
 
-Technically, this library implements an [Effect Handler](https://github.com/Day8/re-frame/tree/develop/docs), 
+Technically, this library implements an [Effect Handler](https://github.com/day8/re-frame/tree/develop/docs), 
 keyed `:async-flow`. It has a declarative, data oriented design.
 
 #### TOC
