@@ -1,6 +1,7 @@
 
-[![GitHub license](https://img.shields.io/github/license/day8/re-frame-async-flow-fx.svg)](LICENSE)
-[![Circle CI](https://circleci.com/gh/day8/re-frame-async-flow-fx/tree/master.svg?style=shield&circle-token=:circle-ci-badge-token)](https://circleci.com/gh/day8/re-frame-async-flow-fx/tree/master)
+[![clojars](https://img.shields.io/clojars/v/day8.re-frame/async-flow-fx.svg)](https://clojars.org/day8.re-frame/async-flow-fx)
+[![license](https://img.shields.io/github/license/day8/re-frame-async-flow-fx.svg)](LICENSE)
+[![ci](https://github.com/day8/re-frame-async-flow-fx/workflows/ci/badge.svg)](https://github.com/day8/re-frame-async-flow-fx/actions?workflow=ci)
 
 ## Async Control Flow In re-frame
 
