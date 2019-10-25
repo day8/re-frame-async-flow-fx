@@ -10,7 +10,7 @@
                  [re-frame "0.10.9" :scope "provided"]
                  [day8.re-frame/forward-events-fx "0.0.6"]]
 
-  :plugins [[lein-shadow "0.1.5"]]
+  :plugins [[lein-shadow "0.1.6"]]
 
   :profiles {:debug {:debug true}
              :dev   {:dependencies [[karma-reporter "3.1.0"]
