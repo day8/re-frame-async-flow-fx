@@ -1,23 +1,7 @@
-(defproject    day8.re-frame/async-flow-fx "see :git-version below https://github.com/arrdem/lein-git-version"
+(defproject    day8.re-frame/async-flow-fx "lein-git-inject/version"
   :description "A re-frame effects handler for coordinating the kind of async control flow which often happens on app startup."
   :url         "https://github.com/day8/re-frame-async-flow-fx.git"
   :license     {:name "MIT"}
-
-  :git-version
-  {:status-to-version
-   (fn [{:keys [tag version branch ahead ahead? dirty?] :as git-status}]
-     (if-not (string? tag)
-       ;; If git-status is nil (i.e. IntelliJ reading project.clj) then return an empty version.
-       "_"
-       (if (and (not ahead?) (not dirty?))
-         tag
-         (let [[_ major minor patch suffix] (re-find #"v?(\d+)\.(\d+)\.(\d+)(-.+)?" tag)]
-           (if (nil? major)
-             ;; If tag is poorly formatted then return GIT-TAG-INVALID
-             "GIT-TAG-INVALID"
-             (let [patch' (try (Long/parseLong patch) (catch Throwable _ 0))
-                   patch+ (inc patch')]
-               (str major "." minor "." patch+ suffix "-" ahead "-SNAPSHOT")))))))}
 
   :dependencies [[org.clojure/clojure             "1.10.1" :scope "provided"]
                  [org.clojure/clojurescript       "1.10.520" :scope "provided"
@@ -27,8 +11,10 @@
                  [re-frame                        "0.10.9" :scope "provided"]
                  [day8.re-frame/forward-events-fx "0.0.6"]]
 
-  :plugins [[me.arrdem/lein-git-version "2.0.3"]
-            [lein-shadow                "0.1.5"]]
+  :plugins      [[day8/lein-git-inject "0.0.2"]
+                 [lein-shadow          "0.1.6"]]
+
+  :middleware   [leiningen.git-inject/middleware]
 
   :profiles {:debug {:debug true}
              :dev   {:dependencies [[karma-reporter     "3.1.0"]
