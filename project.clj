@@ -20,7 +20,7 @@
   :profiles {:debug {:debug true}
              :dev   {:dependencies [[karma-reporter     "3.1.0"]
                                     [day8.re-frame/test "0.1.5"]
-                                    [binaryage/devtools "0.9.10"]]
+                                    [binaryage/devtools "0.9.11"]]
                      :plugins      [[lein-ancient "0.6.15"]
                                     [lein-shell   "0.5.0"]]}}
 
