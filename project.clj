@@ -13,7 +13,7 @@
                  [day8.re-frame/forward-events-fx "0.0.6"]]
 
   :plugins      [[day8/lein-git-inject "0.0.2"]
-                 [lein-shadow          "0.1.6"]]
+                 [lein-shadow          "0.1.7"]]
 
   :middleware   [leiningen.git-inject/middleware]
 
