@@ -59,7 +59,7 @@
 (defn massage-rules
   "Massage the supplied rules as follows:
     - replace `:when` keyword value with a function implementing the predicate
-    - ensure that only `:dispatch` or `:dispatch-n` is provided
+    - ensure that only one of `:dispatch`, `:dispatch-n` or `:dispatch-fn` is provided
     - add a unique :id, if one not already present"
   [rules]
   (->> rules
