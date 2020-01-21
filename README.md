@@ -59,8 +59,8 @@ In your app's main entry function, we want to initiate the boot process:
 Why the use of `dispatch-sync`, rather than `dispatch`?
 
 Well, `dispatch-sync` is convenient here because it ensures that
-`app-db` is synchronously initialised **before** we start mounting components/views (which subscribe to state).  Using
-`dispatch` would work too, except it runs the handler **later**.  So, we'd have to then code
+`app-db` is synchronously initialised **before** we start mounting components/views (which subscribe to state). Using
+`dispatch` would work too, except it runs the handler **later**. So, we'd have to then code
 defensively in our subscriptions and views, guarding against having an uninitialised `app-db`.
 
 This is the only known case where you should use `dispatch-sync` over `dispatch` (other than in tests).
@@ -79,7 +79,7 @@ In the namespace where you register your event handlers, perhaps called `events.
 ```
 
 Because we never subsequently use this `require`, it
-appears redundant.  But its existence will cause the `:async-flow` effect
+appears redundant. But its existence will cause the `:async-flow` effect
 handler to self-register with re-frame, which is important
 to everything that follows.
 
@@ -92,7 +92,7 @@ to everything that follows.
      {:when :seen? :events :success-X  :dispatch [:do-Y]}
      {:when :seen? :events :success-Y  :dispatch [:do-Z]}
      {:when :seen? :events :success-Z  :halt? true}
-     {:when :seen-any-of? :events [:fail-X :fail-Y :fail-Z] :dispatch  [:app-failed-state] :halt? true}]})
+     {:when :seen-any-of? :events [:fail-X :fail-Y :fail-Z] :dispatch [:app-failed-state] :halt? true}]})
 ```
 Try to read each `rule` line as an English sentence. When this event happens, dispatch another event. 
 The rules above combine to run tasks X, Y and Z serially, like dominoes. Much more complicated
@@ -108,12 +108,12 @@ This event handler will do two things:
 
 ```clj
 (reg-event-fx                    ;; note the -fx
-  :boot                          ;; usage:  (dispatch [:boot])  See step 3
+  :boot                          ;; usage: (dispatch [:boot])  See step 3
   (fn [_ _]
-    {:db (-> {}                  ;;  do whatever synchronous work needs to be done
+    {:db (-> {}                  ;; do whatever synchronous work needs to be done
             task1-fn             ;; ?? set state to show "loading" twirly for user??
             task2-fn)            ;; ?? do some other simple initialising of state
-     :async-flow  (boot-flow)})) ;; kick off the async process
+     :async-flow (boot-flow)})) ;; kick off the async process
 ```
 
 Notice at that last line. This library provides the "effect handler" which implements `:async-flow`. It reads
@@ -142,7 +142,7 @@ When an App boots, it performs a set of tasks to initialise itself.
 
 Invariably, there are dependencies between these tasks, like task1 has to run before task2.
 
-Because of these dependencies, "something" has to coordinate how tasks are run.  Within the clojure community,
+Because of these dependencies, "something" has to coordinate how tasks are run. Within the clojure community,
 a library like [Component](https://github.com/stuartsierra/component) or [mount](https://github.com/tolitius/mount)
 is often turned to in these moments, but we won't be
 doing that here. We'll be using an approach which is more re-frame friendly.
@@ -176,7 +176,7 @@ A booting app will invariably have to coordinate **asynchronous tasks** like
 
 **Coordinating asynchronous tasks means finding ways to represent and manage time**,
 and time is a programming menace.
-In Greek mythology,  Cronus was the much feared Titan of Time, believed to
+In Greek mythology, Cronus was the much feared Titan of Time, believed to
 bring cruelty and tempestuous disorder, which surely makes him the patron saint of asynchronous programming.
 
 Solutions like promises and futures attempt to make time disappear and allow you to program
@@ -198,7 +198,7 @@ state machine complexity.
 There will also be failures and errors!
 
 Nothing messes up tight, elegant code quite like error
-handling.  Did the Ancient Greeks have a terrifying Titan for the unhappy
+handling. Did the Ancient Greeks have a terrifying Titan for the unhappy
 path too? Ernos? They should have.
 
 When one of the asynchronous startup tasks fails, we
@@ -215,8 +215,8 @@ We want our app to boot in the shortest possible amount of time. So any asynchro
 tasks which can be done in parallel, must be done in parallel.
 
 The boot process is seldom linear, one task after an another. Instead, it involves
-dependencies like:  when task1 has finished, start all of task2, task3 and task4 in
-parallel.  And task5 can be started only when both task2 and task3 has completed successfully.
+dependencies like: when task1 has finished, start all of task2, task3 and task4 in
+parallel. And task5 can be started only when both task2 and task3 has completed successfully.
 And task6 can start when task3 alone has completed, but we really don't care if it finishes
 properly - it is non essential to a working app.
 
@@ -243,7 +243,7 @@ in multiple places to reconstruct a mental model of the overall control flow.
 **re-frame has events. That's how we roll.**
 
 A re-frame application can't step forward in time unless an event happens; unless something
-does a `dispatch`.  Events will be the organising principle in our solution exactly
+does a `dispatch`. Events will be the organising principle in our solution exactly
 because events are an organising principle within re-frame itself.
 
 ### Tasks and Events
@@ -257,7 +257,7 @@ If we take an X-ray of an async task, we'll see this event skeleton:
 
 So that's three events: **one to start and two ways to finish**. Please read that again
 - its importance is sometimes missed on first reading. Your tasks must conform to this 
-3 event structure (which is not hard).  
+3 event structure (which is not hard).
 
 Of course, re-frame will route all three events to their registered handler. The actual WORK of
 starting the task, or handling the errors, will be done in the event handler that you write.
@@ -271,8 +271,8 @@ have seen an event saying that task1 finished successfully.
 
 ### When-E1-Then-E2
 
-Read that last paragraph again.  It distills further to: when event E1 happens then 
-`dispatch` event E2.  Or, more pithily again, When-E1-Then-E2.
+Read that last paragraph again. It distills further to: when event E1 happens then 
+`dispatch` event E2. Or, more pithily again, When-E1-Then-E2.
 
 When-E1-Then-E2 is the simple case, with more complicated variations like:
   - when **both** events E1 and E2 have happened, then dispatch E3
@@ -309,7 +309,7 @@ Although optional, only one of :dispatch or :dispatch-n can be specified
 
 In our mythical app, we can't issue a database query until we have a database connection, so the 1st rule (above) says:
   1. When `:success-db-connect` is dispatched, presumably signalling that we have a database connection...
-  2. then `(dispatch [:query-user])`  and `(dispatch [:query-site-prefs])`
+  2. then `(dispatch [:query-user])` and `(dispatch [:query-site-prefs])`
 
 We have successfully booted when both database queries succeed, so the 2nd rule says:
   1. When both success events have been seen (they may arrive in any order),
@@ -322,12 +322,12 @@ failure mode, so the 3rd rules says:
 
 Once we have user data (from the user-query), we can start the intercom process, so the 4th rules days:
   1. When `:success-user-query` is dispatched
-  2. then  `(dispatch [:do-intercom])`
+  2. then `(dispatch [:do-intercom])`
 
 Further Notes:
 
 1. The 4th rule starts "Intercom" once we have user data. But notice that
-   nowhere do we wait for a `:success-intercom`.  We want this process started,
+   nowhere do we wait for a `:success-intercom`. We want this process started,
    but it is not essential for the app's function, so we don't wait for it to complete.
 
 2. The coordination processes never actively participate in handling any events. Event handlers
@@ -338,8 +338,8 @@ Further Notes:
    are named as follows: `:do-*` is for starting tasks. Task completion is either `:success-*`
    or `:fail-*`
 
-4. The `:halt?` value of true means the boot flow is completed.  Clean up the flow coordinator.
-   It will have some state somewhere. So get rid of that.  And it will have been "sniffing events",
+4. The `:halt?` value of true means the boot flow is completed. Clean up the flow coordinator.
+   It will have some state somewhere. So get rid of that. And it will have been "sniffing events",
    so stop doing that, too. You should provide at least one of these in your rules.
 
 5. There's nothing in here about the teardown process as the application is closing. Here we're only
@@ -348,7 +348,7 @@ Further Notes:
 6. There will need to be something that kicks off the whole flow. In the case above, presumably
    a `(dispatch [:do-connect-db])` is how it all starts.
 
-7. A word on Retries.  XXX
+7. A word on Retries. XXX
 
 ### The Flow Specification
 
@@ -361,7 +361,7 @@ The `:async-flow` data structure has the following fields:
     If this default is used then two flows can't be running at once because they'd be using the same id.
 
   - `db-path` - optional - the path within `app-db` where the coordination logic should store state. Two pieces
-     of state are stored:  the set of seen events, and the set of started tasks.
+    of state are stored: the set of seen events, and the set of started tasks.
     If absent, then state is not stored in app-db and is instead held in an internal atom.
     We prefer to store state in app-db because we like the philosophy of having all the data in the one place,
     but it is not essential.
@@ -372,7 +372,7 @@ The `:async-flow` data structure has the following fields:
 
 A `rule` is a map with the following fields:
 
-  - `:when`  one of `:seen?`, `:seen-both?`. `:seen-all-of?`, `:seen-any-of?`
+  - `:when` one of `:seen?`, `:seen-both?`. `:seen-all-of?`, `:seen-any-of?`
     `:seen?`, `:seen-both?` and `:seen-all-of?` are interchangeable.
   - `:events` either a single keyword, or a collection of keywords, presumably event ids.
               a collection can also contain whole event vectors that will be matched,
@@ -392,20 +392,19 @@ How does async-flow work? It does the following:
   3. It requests that all `:events` mentioned in `flow` rules should be "forwarded" to
      this event handler, after they have been handled by their normal handlers.
      So, if the event `:abc` was part of `flow` spec, then after `[:abc 1]` was handled by its normal handler
-     there would be an additional `(dispatch [:async/flow  [:abc 1]])` which would be handled the coordinator
+     there would be an additional `(dispatch [:id [:abc 1]])` which would be handled the coordinator
      created in steps 1 and 2.
-  4. the event handler keeps track of what events have occurred, and what tasks have already
-     been started. It keeps this state at the path nominated in `:db-path`.
-  5. the event handler uses your `flow` specification and the state it internally
-     maintains to work out how it should
-     respond to each newly forwarded event.
+  4. The event handler keeps track of what events have occurred, and what tasks have already
+     been started. It keeps this state at the path nominated in `:db-path` or in local atom, if there is no `:db-path`.
+  5. The event handler uses your `flow` specification and the state it internally
+     maintains to work out how it should respond to each newly forwarded event.
   6. At some point, the flow finishes (failed or succeeded) and the event handler from step 1
-     is dispatched a `:halt-flow`. It de-registers itself, and stops all event sniffing.
+     sees a rule with `:halt?` set to `true`. Event handler de-registers itself, removes its state, and stops all event sniffing.
 
 
 Notes:
   1.  This pattern is flexible. You could use it to implement a more complex FSM coordinator.
-  2.  All the work is done in a normal event handler (dynamically created for you).  And
+  2.  All the work is done in a normal event handler (dynamically created for you). And
       it is all organised around events which this event handler processes. So this
       solution is aligned on re-frame fundamentals.
 
@@ -433,7 +432,7 @@ Or, to dispatch a server error event if a status of 500 or above has been seen
 ## Design Philosophy
 
 Managing async task flow means managing time, and managing time requires a state machine. You need:
-   - some retained state   (describing where we have got to)
+   - some retained state (describing where we have got to)
    - events which announce that something has happened or not happened (aka FSM triggers)
    - a set of rules about transitioning app state and triggering further activity when events arrive.
 
@@ -451,12 +450,12 @@ the state machine). In clojure, we have a preference for "programming in data" w
 
 Second, coding (in javascript) a more complicated state machine with a bunch of failure states and
 cascades will ultimately get messy. Time is like a liquid under pressure and it will force its way
-out through the cracks in the abstraction.  A long history with FSM encourages us to implement 
+out through the cracks in the abstraction. A long history with FSM encourages us to implement 
 state machines in a data driven way (a table driven way).
 
 So we choose data and reject the redux-saga approach (while being mindful of the takeoffs).
 
-But it would be quite possible to create a re-frame version of redux-saga.  In ClosureScript
+But it would be quite possible to create a re-frame version of redux-saga. In ClosureScript
 we have `core.async` instead of generator functions. That is left as an exercise for the motivated reader.
 
 A motivated user might also produce a fully general FSM version of this effects handler.
