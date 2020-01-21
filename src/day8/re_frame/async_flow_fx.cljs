@@ -119,9 +119,8 @@
         rules       (massage-rules rules)]       ;; all of the events referred to in the rules
 
     ;; Return an event handler which will manage the flow.
-    ;; This event handler will receive 3 kinds of events:
+    ;; This event handler will receive 2 kinds of events:
     ;;   (dispatch [:id :setup])
-    ;;   (dispatch [:id :halt-flow])
     ;;   (dispatch [:id [:forwarded :event :vector]])
     ;;
     ;; This event handler returns a map of effects - it expects to be registered using
@@ -144,6 +143,7 @@
         ;; A new event has been forwarded, so work out what should happen:
         ;;  1. does this new event mean we should dispatch another?
         ;;  2. remember this event has happened
+        ;;  3. does this new event mean we should halt the flow?
         (let [[_ forwarded-event] event-v
               {:keys [seen-events rules-fired]} (get-state db)
               new-seen-events (conj seen-events forwarded-event)
