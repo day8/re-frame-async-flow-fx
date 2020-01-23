@@ -24,7 +24,7 @@ So, it has a similar intent to [mount](https://github.com/tolitius/mount)
 or [component](https://github.com/stuartsierra/component),
 but it dovetails with, and leverages the event driven nature of re-frame's architecture. 
 
-Technically, this library implements an [Effect Handler](https://github.com/day8/re-frame/tree/develop/docs), 
+Technically, this library implements an [Effect Handler](https://github.com/day8/re-frame/blob/master/docs/Effects.md), 
 keyed `:async-flow`. It has a declarative, data oriented design.
 
 #### TOC
