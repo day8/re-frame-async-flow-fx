@@ -51,10 +51,6 @@
                           :ns-regexp "-test$"
                           :output-to "target/karma-test.js"}}}
 
-  :shell {:commands {"open" {:windows ["cmd" "/c" "start"]
-                             :macosx  "open"
-                             :linux   "xdg-open"}}}
-
   :deploy-repositories [["clojars" {:sign-releases false
                                     :url           "https://clojars.org/repo"
                                     :username      :env/CLOJARS_USERNAME
@@ -62,10 +58,17 @@
 
   :release-tasks [["deploy" "clojars"]]
 
-  :aliases {"dev-auto"   ["do"
-                          ["clean"]
-                          ["shadow" "watch" "browser-test"]]
-            "karma-once" ["do"
-                          ["clean"]
-                          ["shadow" "compile" "karma-test"]
-                          ["shell" "karma" "start" "--single-run" "--reporters" "junit,dots"]]})
+  :shell {:commands {"karma" {:windows         ["cmd" "/c" "karma"]
+                              :default-command "karma"}
+                     "open"  {:windows         ["cmd" "/c" "start"]
+                              :macosx          "open"
+                              :linux           "xdg-open"}}}
+
+  :aliases {"watch" ["do"
+                     ["clean"]
+                     ["shadow" "watch" "browser-test" "karma-test"]]
+
+            "ci"    ["do"
+                     ["clean"]
+                     ["shadow" "compile" "karma-test"]
+                     ["shell" "karma" "start" "--single-run" "--reporters" "junit,dots"]]})
