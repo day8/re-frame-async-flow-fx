@@ -126,7 +126,7 @@ Unit tests use standard cljs.test
 To run tests in a browser
 
 ```
-lein dev
+lein watch
 ```
 
 To run the tests with Karma
