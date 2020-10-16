@@ -381,6 +381,7 @@ A `rule` is a map with the following fields:
   - `:dispatch-n` to dispatch multiple events, must be a coll where each elem represents one event to dispatch.
   - `:dispatch-fn` can be a function that accepts the seen event, and returns a coll where each elem represents one event to dispatch.
   - `:halt?` optional boolean. If true, the flow enters teardown and stops.
+  - `:transient?` optional boolean. If true, the flow will allow the rule to be executed multiple times.
 
 
 ### Under The Covers
@@ -426,7 +427,11 @@ Or, to dispatch a server error event if a status of 500 or above has been seen
 ```clj
 {:when :seen? :events (fn [[e status]] (and (= e :http/response-received) (>= status 500)))
  :dispatch [:server/error]))
-```
+``` 
+
+Furthermore, sometimes it might be helpful to allow rules to be executed more than once. For these cases set
+`:transient?` to `true`. This way the system will not track that the rule has fired and will allow it to execute
+any number of times. 
 
 
 ## Design Philosophy

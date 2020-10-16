@@ -58,13 +58,13 @@
 
 (deftest test-massage-rules
   (is (= (core/massage-rules [{:when :seen? :events :1 :dispatch [:2]}])
-         (list {:id 0 :when core/seen-all-of? :events #{:1} :halt? false :dispatch-n (list [:2])})))
+         (list {:id 0 :when core/seen-all-of? :events #{:1} :transient? false :halt? false :dispatch-n (list [:2])})))
 
   (is (= (core/massage-rules [{:when :seen-both? :events [:1 :2] :halt? true}])
-         (list {:id 0 :when core/seen-all-of? :events #{:1 :2} :halt? true :dispatch-n '()})))
+         (list {:id 0 :when core/seen-all-of? :events #{:1 :2} :transient? false :halt? true :dispatch-n '()})))
 
   (is (= (core/massage-rules [{:when :seen-any-of? :events #{:1 :2} :dispatch [:2] :halt? true}])
-         (list {:id 0 :when core/seen-any-of? :events #{:1 :2} :halt? true :dispatch-n (list [:2])}))))
+         (list {:id 0 :when core/seen-any-of? :events #{:1 :2} :transient? false :halt? true :dispatch-n (list [:2])}))))
 
 
 (deftest test-setup
@@ -184,6 +184,23 @@
              [:test-id [:4 :b]])
           {:db         {:p {:seen-events #{[:4 :b]} :rules-fired #{2}}}
            :dispatch-n [[:6]]}))))
+
+(deftest test-transient-handling
+  (let [flow {:first-dispatch [:start]
+             :id             :test-id
+             :db-path        [:p]
+             :rules          [{:id 0 :when :seen? :transient? true :events [[:1 :a]] :dispatch [:2]}
+                              {:id 2 :when :seen-any-of? :events [[:4 :b] :5] :dispatch [:6]}
+                              ]}
+       handler-fn (core/make-flow-event-handler flow)]
+
+      ;; new event should cause a dispatch and not track rules-fired
+      (is (= (handler-fn
+              {:db {:p {:seen-events #{}
+                        :rules-fired #{}}}}
+              [:test-id [:1 :a]])
+             {:db         {:p {:seen-events #{[:1 :a]} :rules-fired #{}}}
+              :dispatch-n [[:2]]}))))
 
 (deftest test-halt1
   (let [flow {:first-dispatch [:start]

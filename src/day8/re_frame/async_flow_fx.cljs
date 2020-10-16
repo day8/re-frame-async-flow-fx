@@ -63,12 +63,13 @@
     - add a unique :id, if one not already present"
   [rules]
   (->> rules
-       (map-indexed (fn [index {:as rule :keys [id when events dispatch dispatch-n dispatch-fn halt?]}]
+       (map-indexed (fn [index {:as rule :keys [id when events transient? dispatch dispatch-n dispatch-fn halt?]}]
                       (if (< 1 (count (remove nil? [dispatch dispatch-n dispatch-fn])))
                         (re-frame/console :error
                                           "async-flow: rule can only specify one of :dispatch, :dispatch-n and :dispatch-fn. Got more than one: " rule)
                         (cond-> {:id         (or id index)
                                  :halt?      (or halt? false)
+                                 :transient? (or transient? false)
                                  :when       (when->fn when)
                                  :events     (if (coll? events) (set events) (hash-set events))}
                           dispatch-fn (assoc :dispatch-fn dispatch-fn)
@@ -149,7 +150,7 @@
               new-seen-events (conj seen-events forwarded-event)
               ready-rules     (startable-rules rules new-seen-events rules-fired)
               halt?           (some :halt? ready-rules)
-              ready-rules-ids (->> ready-rules (map :id) set)
+              ready-rules-ids (->> ready-rules (filter #(not (:transient? %))) (map :id) set)
               new-rules-fired (set/union rules-fired ready-rules-ids)
               new-dispatches  (rules->dispatches ready-rules forwarded-event)
               new-db          (set-state db new-seen-events new-rules-fired)]
