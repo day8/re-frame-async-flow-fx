@@ -1,6 +1,6 @@
-(defproject    day8.re-frame/async-flow-fx "lein-git-inject/version"
+(defproject    lumanu/async-flow-fx "lein-git-inject/version"
   :description "A re-frame effects handler for coordinating the kind of async control flow which often happens on app startup."
-  :url         "https://github.com/day8/re-frame-async-flow-fx.git"
+  :url         "https://github.com/lumanu/re-frame-async-flow-fx.git"
   :license     {:name "MIT"}
 
   :min-lein-version "2.9.0"
