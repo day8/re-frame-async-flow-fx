@@ -74,7 +74,7 @@ In the namespace where you register your event handlers, perhaps called `events.
 (ns app.events
   (:require
     ...
-    [day8.re-frame.async-flow-fx]   ;; <-- add this
+    [day8.re-frame.async-flow-fx :as async-flow-fx]   ;; <-- add this
     ...))
 ```
 
@@ -428,6 +428,25 @@ Or, to dispatch a server error event if a status of 500 or above has been seen
  :dispatch [:server/error]))
 ```
 
+## Event Messaging
+
+In an async flow it is often useful to dispatch an event to indicate success or failure of
+some process. However, this event may not actually have to do anything. `re-frame` will issue a 
+warning if an event is dispatched that has not been registered by `reg-event-db` or `reg-event-fx`.
+If you use this pattern alot it quickly becomes inconvienent to register multiple no-op handlers to 
+avoid this warning.
+
+To address this issue we provide a no-op handler `::async-flow-fx/notify` which you can use in the 
+following way.
+
+```clj
+[{:when :seen?        :events [[::async-flow-fx/notify :success-db-connect]]   
+  :dispatch-n '([:do-query-user] [:do-query-site-prefs])}
+ ...]}]
+ ```
+
+Note  `::async-flow-fx/notify` doesn't do anything special and if you like you can add your own 
+no-op event.
 
 ## Design Philosophy
 
