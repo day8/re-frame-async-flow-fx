@@ -20,3 +20,6 @@ misc/
 /.shadow-cljs/
 /shadow-cljs.edn
 resources/public/js
+
+.clj-kondo/
+.lsp/
