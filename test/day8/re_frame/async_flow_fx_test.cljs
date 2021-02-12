@@ -249,3 +249,18 @@
              [:test-id [:3 :some-data]])
            {:db                        {:p {:seen-events #{[:3 :some-data]} :rules-fired #{1}}}
             :dispatch-n                [[:4 :some-data]]}))))
+
+(deftest test-notify-handling
+  (let [flow {:first-dispatch [:start]
+              :id             :test-id
+              :db-path        [:p]
+              :rules [{:id 0 :when :seen? :events [[::core/notify :test-notify]] :dispatch [:1]}]}
+        handler-fn  (core/make-flow-event-handler flow)]
+
+    ;; function in seen? should act as predicate
+    (is (= (handler-fn
+            {:db {:p {:seen-events #{}
+                      :rules-fired #{}}}}
+            [:test-id [::core/notify :test-notify]])
+           {:db         {:p {:seen-events #{[::core/notify :test-notify]} :rules-fired #{0}}}
+            :dispatch-n [[:1]]}))))

@@ -41,8 +41,10 @@
   "Given the accumulated set of seen events and the set of rules already started,
   return the list of rules which should now be started"
   [rules now-seen-events rules-fired]
-  (->> (remove (comp rules-fired :id) rules)
-       (filterv (fn [task] ((:when task) (:events task) now-seen-events)))))
+  (->> rules
+       (remove (comp rules-fired :id))
+       (filterv (fn [task] 
+                  ((:when task) (:events task) now-seen-events)))))
 
 
 (def map-when->fn {:seen?        seen-all-of?
@@ -79,10 +81,10 @@
 
 
 (defn- rules->dispatches
-  [rules event]
   "Given an rule and event, return a sequence of dispatches. For each dispatch in the rule:
     - if the dispatch is a keyword, return it as is
     - if the dispatch is a function, call the function with the event"
+  [rules event]
   (mapcat (fn [rule]
             (let [{:keys [dispatch-fn dispatch-n]} rule]
               (cond
@@ -189,3 +191,11 @@
 (re-frame/reg-fx
   :async-flow
   flow->handler)
+
+;; -- No-Op handler
+(re-frame/reg-event-fx
+ ::notify
+ (fn handler:notify
+   [{:keys [db]} [_ kw & others]]
+  ;;  NO-OP handler see docs
+   ))
