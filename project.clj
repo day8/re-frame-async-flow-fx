@@ -10,7 +10,7 @@
                   :exclusions [com.google.javascript/closure-compiler-unshaded
                                org.clojure/google-closure-library
                                org.clojure/google-closure-library-third-party]]
-                 [thheller/shadow-cljs            "2.11.4" :scope "provided"]
+                 [thheller/shadow-cljs            "2.11.18" :scope "provided"]
                  [re-frame                        "1.1.1" :scope "provided"]
                  [day8.re-frame/forward-events-fx "0.0.6"]]
 
