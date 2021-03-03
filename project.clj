@@ -5,7 +5,7 @@
 
   :min-lein-version "2.9.0"
 
-  :dependencies [[org.clojure/clojure             "1.10.1" :scope "provided"]
+  :dependencies [[org.clojure/clojure             "1.10.2" :scope "provided"]
                  [org.clojure/clojurescript       "1.10.773" :scope "provided"
                   :exclusions [com.google.javascript/closure-compiler-unshaded
                                org.clojure/google-closure-library
