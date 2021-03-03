@@ -11,7 +11,7 @@
                                org.clojure/google-closure-library
                                org.clojure/google-closure-library-third-party]]
                  [thheller/shadow-cljs            "2.11.18" :scope "provided"]
-                 [re-frame                        "1.1.1" :scope "provided"]
+                 [re-frame                        "1.2.0" :scope "provided"]
                  [day8.re-frame/forward-events-fx "0.0.6"]]
 
   :plugins      [[day8/lein-git-inject "0.0.14"]
