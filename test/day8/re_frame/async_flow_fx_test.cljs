@@ -1,6 +1,8 @@
 (ns day8.re-frame.async-flow-fx-test
-  (:require [cljs.test :refer-macros [is deftest]]
+  (:require [cljs.test :refer-macros [is deftest testing]]
             [re-frame.core :as rf]
+            [re-frame.db :refer [app-db]]
+            [re-frame.registrar :as registrar]
             [day8.re-frame.test :as rf-test]
             [day8.re-frame.async-flow-fx :as core]))
 
@@ -93,7 +95,7 @@
                                        :dispatch [::flow-complete] :halt? true}]}
           handler-fn         (core/make-flow-event-handler flow)]
       ;; Make flow handler should omit :dispatch when absent in flow
-      (is (= (handler-fn {:db {}} [::dummy-id :setup])
+      (is (= (handler-fn {:db {}} [::some-flow-id :setup])
              {:db             {}
               :forward-events {:register    ::some-flow-id
                                :events      #{::1 ::2 ::3}
@@ -225,6 +227,63 @@
              {:db                       {}
               :deregister-event-handler :blah
               :forward-events           {:unregister :blah}}))))
+
+
+(deftest test-deregister-with-multiple-triggers-and-halt
+  ;; Some events watched by a flow are fired more then once, however the flow only
+  ;; cares about seeing at least one, then halt. This tests that is handled correctly, issue #33
+  ;; We setup with the same event being fired 3 times. Once on first-dispatch, then the rule
+  ;; fires it two more times. Each dispatch has a different arg value to help distinguish them.
+  ;; What is expected:
+  ;; - the flow should queue [::multi 1] on setup
+  ;; - the rule should queue [::multi 2] and [::multi 3], stop and deregister.
+  ;; - by the time we see the second ::multi, the flow should have unregistered all traces of itself.
+  (rf-test/run-test-async
+    (let [dispatched-events  (atom #{})
+          note-event-handler (fn [{:keys [db]} event-v]
+                               (swap! dispatched-events conj event-v)
+                               {})
+          flow               {:id             ::flow-with-multiple-triggers
+                              :db-path        [:flow-state]
+                              :first-dispatch [::multi 1]
+                              :rules          [{:id         :only-rule
+                                                :when       :seen? :events [::multi]
+                                                :dispatch-n [[::multi 2] [::multi 3]] :halt? true}]}
+          handler-fn         (core/make-flow-event-handler flow)
+          post-setup         (handler-fn {:db {}} [::flow-with-multiple-triggers :setup])]
+      (is (= post-setup
+             {:db             {:flow-state {:seen-events #{} :rules-fired #{}}}
+              :forward-events {:register    ::flow-with-multiple-triggers
+                               :events      #{::multi}
+                               :dispatch-to [::flow-with-multiple-triggers]}
+              :dispatch       [::multi 1]}))
+      ;; Register our events and kick off flow with fx.
+      (rf/reg-event-fx ::handler-with-flow-fx (fn [_ _] {:async-flow flow}))
+      (rf/reg-event-fx ::multi note-event-handler)
+      (rf/dispatch [::handler-with-flow-fx])
+      (rf-test/wait-for
+        [::multi]
+        ; This is the :first-dispatch of ::multi triggered by :setup
+        ; At this point the flow and forwarded-events should be registered.
+        (is (= @dispatched-events #{[::multi 1]}))
+        (is (= {:seen-events #{} :rules-fired #{}}) (get @app-db :flow-state))
+        (is (registrar/get-handler :event ::flow-with-multiple-triggers true))
+        (rf-test/wait-for
+          [::multi]
+          ; This is the second dispatch of ::multi triggered by the rule's dispatch-n.
+          ; At this point the rule is considered fired (the third dispatch is still queued),
+          ; but due to :halt? true, the flow and forwarders should also no longer be registered.
+          (is (= @dispatched-events #{[::multi 1] [::multi 2]}))
+          (is (nil? (get @app-db :flow-state)) "We should have no flow state at this point")
+          (is (nil? (registrar/get-handler :event ::flow-with-multiple-triggers false)))
+          (rf-test/wait-for
+            [::multi]
+            ; This is the third and final final dispatch of ::multi from the flow rule.
+            ; This is purely proving that queued events continue to flow in re-frame after the flow is gone.
+            (is (= @dispatched-events #{[::multi 1] [::multi 2] [::multi 3]}))
+            (is (nil? (get @app-db :flow-state)) "We should have no flow state at this point")
+            (is (nil? (registrar/get-handler :event ::flow-with-multiple-triggers false)))))))))
+
 
 (deftest test-function-handling
   (let [flow {:first-dispatch [:start]
