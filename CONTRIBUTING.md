@@ -45,15 +45,17 @@ karma start     # to run the tests with an auto watcher
 
 If possible provide:
 
-* Code that fixes the bug
-* Failing tests which pass with the new changes
-* Improvements to documentation to make it less likely that others will run into issues (if relevant).
+- Code that fixes the bug.
+- Failing tests which pass with the new changes.
+- Improvements to documentation to make it less likely that others will run into issues (if relevant).
+- Add the change to the Unreleased section of [CHANGELOG.md](CHANGELOG.md)
 
 ## Pull requests for features
 
 If possible provide:
 
-* Code that implements the new feature
-* Tests to cover the new feature including all of the code paths
-* Docstrings for functions
-* Documentation examples
+- Code that implements the new feature
+- Tests to cover the new feature including all of the code paths
+- Docstrings for functions
+- Documentation examples
+- Add the change to the Unreleased section of [CHANGELOG.md](CHANGELOG.md)
