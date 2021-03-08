@@ -1,9 +1,5 @@
-[![CI](https://github.com/day8/re-frame-async-flow-fx/workflows/ci/badge.svg)](https://github.com/day8/re-frame-async-flow-fx/actions?workflow=ci)
-[![CD](https://github.com/day8/re-frame-async-flow-fx/workflows/cd/badge.svg)](https://github.com/day8/re-frame-async-flow-fx/actions?workflow=cd)
-[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/day8/re-frame-async-flow-fx?style=flat)](https://github.com/day8/re-frame-async-flow-fx/tags)
+[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/lumanu/re-frame-async-flow-fx?style=flat)](https://github.com/lumanu/re-frame-async-flow-fx/tags)
 [![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/async-flow-fx.svg)](https://clojars.org/day8.re-frame/async-flow-fx)
-[![GitHub issues](https://img.shields.io/github/issues-raw/day8/re-frame-async-flow-fx?style=flat)](https://github.com/day8/re-frame-async-flow-fx/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/day8/re-frame-async-flow-fx)](https://github.com/day8/re-frame-async-flow-fx/pulls)
 [![License](https://img.shields.io/github/license/day8/re-frame-async-flow-fx.svg)](LICENSE)
 
 ## Async Control Flow In re-frame
@@ -381,6 +377,7 @@ A `rule` is a map with the following fields:
   - `:dispatch-n` to dispatch multiple events, must be a coll where each elem represents one event to dispatch.
   - `:dispatch-fn` can be a function that accepts the seen event, and returns a coll where each elem represents one event to dispatch.
   - `:halt?` optional boolean. If true, the flow enters teardown and stops.
+  - `:transient?` optional boolean. If true, the flow will allow the rule to be executed multiple times.
 
 
 ### Under The Covers
@@ -426,7 +423,11 @@ Or, to dispatch a server error event if a status of 500 or above has been seen
 ```clj
 {:when :seen? :events (fn [[e status]] (and (= e :http/response-received) (>= status 500)))
  :dispatch [:server/error]))
-```
+``` 
+
+Furthermore, sometimes it might be helpful to allow rules to be executed more than once. For these cases set
+`:transient?` to `true`. This way the system will not track that the rule has fired and will allow it to execute
+any number of times. 
 
 ## Event Messaging
 
