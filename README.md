@@ -1,10 +1,10 @@
-[![CI](https://github.com/day8/re-frame-async-flow-fx/workflows/ci/badge.svg)](https://github.com/day8/re-frame-async-flow-fx/actions?workflow=ci)
+<!-- [![CI](https://github.com/day8/re-frame-async-flow-fx/workflows/ci/badge.svg)](https://github.com/day8/re-frame-async-flow-fx/actions?workflow=ci)
 [![CD](https://github.com/day8/re-frame-async-flow-fx/workflows/cd/badge.svg)](https://github.com/day8/re-frame-async-flow-fx/actions?workflow=cd)
-[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/day8/re-frame-async-flow-fx?style=flat)](https://github.com/day8/re-frame-async-flow-fx/tags)
-[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/async-flow-fx.svg)](https://clojars.org/day8.re-frame/async-flow-fx)
-[![GitHub issues](https://img.shields.io/github/issues-raw/day8/re-frame-async-flow-fx?style=flat)](https://github.com/day8/re-frame-async-flow-fx/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/day8/re-frame-async-flow-fx)](https://github.com/day8/re-frame-async-flow-fx/pulls)
-[![License](https://img.shields.io/github/license/day8/re-frame-async-flow-fx.svg)](LICENSE)
+[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/day8/re-frame-async-flow-fx?style=flat)](https://github.com/day8/re-frame-async-flow-fx/tags) -->
+[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/async-flow-fx?style=for-the-badge&logo=clojure&logoColor=fff)](https://clojars.org/day8.re-frame/async-flow-fx)
+[![GitHub issues](https://img.shields.io/github/issues-raw/day8/re-frame-async-flow-fx?style=for-the-badge&logo=github)](https://github.com/day8/re-frame-async-flow-fx/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/day8/re-frame-async-flow-fx?style=for-the-badge&logo=github)](https://github.com/day8/re-frame-async-flow-fx/pulls)
+[![License](https://img.shields.io/github/license/day8/re-frame-async-flow-fx?style=for-the-badge)](LICENSE)
 
 ## Async Control Flow In re-frame
 
