@@ -41,7 +41,7 @@ keyed `:async-flow`. It has a declarative, data oriented design.
 ### Step 1. Add Dependency
 
 Add the following project dependency: <br>
-[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/async-flow-fx.svg)](https://clojars.org/day8.re-frame/async-flow-fx)
+[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/async-flow-fx?style=for-the-badge&logo=clojure&logoColor=fff)](https://clojars.org/day8.re-frame/async-flow-fx)
 
 Requires re-frame >= 0.8.0
 
