@@ -2,7 +2,13 @@
   (:require
     [re-frame.core :as re-frame]
     [clojure.set :as set]
+    [cljs.core :refer [system-time]]
     [day8.re-frame.forward-events-fx :refer [as-callback-pred]]))
+
+(def *DEBUG? (atom false))
+
+(defn enable-debug? [enabled?] (swap! *DEBUG? #(identity enabled?)))
+
 
 (defn dissoc-in
   "Dissociates an entry from a nested associative structure returning a new
@@ -43,7 +49,7 @@
   [rules now-seen-events rules-fired]
   (->> rules
        (remove (comp rules-fired :id))
-       (filterv (fn [task] 
+       (filterv (fn [task]
                   ((:when task) (:events task) now-seen-events)))))
 
 
@@ -100,14 +106,14 @@
 
 (defn make-flow-event-handler
   "Given a flow definition, returns an event handler which implements this definition"
-  [{:keys [id db-path rules first-dispatch]}]
-  (let [
-        ;; Subject to db-path, state is either stored in app-db or in a local atom
-        ;; Two pieces of state are maintained:
-        ;;  - the set of seen events
-        ;;  - the set of started tasks
-        _           (assert (or (nil? db-path) (vector? db-path)) "async-flow: db-path must be a vector")
-        local-store (atom {})
+  [{:keys [id db-path rules first-dispatch debug?]
+    :or   {debug? @*DEBUG?}}]
+  ;; Subject to db-path, state is either stored in app-db or in a local atom
+  ;; Two pieces of state are maintained:
+  ;;  - the set of seen events
+  ;;  - the set of started tasks
+  (assert (or (nil? db-path) (vector? db-path)) "async-flow: optional db-path parameter must be a vector")
+  (let [local-store (atom {})
         set-state   (if db-path
                       (fn [db seen started]
                         (assoc-in db db-path {:seen-events seen :rules-fired started}))
@@ -119,7 +125,8 @@
                       (fn [_] @local-store))
 
         rules       (massage-rules rules)]       ;; all of the events referred to in the rules
-
+    (when-not (some :halt? rules)
+      (re-frame/console :warn "async-flow has no rules with :halt?" id "ts:" (system-time)))
     ;; Return an event handler which will manage the flow.
     ;; This event handler will receive 2 kinds of events:
     ;;   (dispatch [:id :setup])
@@ -135,11 +142,17 @@
         ;;   1. Establish initial state - :seen-events and ::rules-fired are made empty sets
         ;;   2. dispatch the first event, to kick start flow (optional)
         ;;   3. arrange for the events to be forwarded to this handler
-        :setup (merge {:db             (set-state db #{} #{})
-                       :forward-events {:register    id
-                                        :events      (apply set/union (map :events rules))
-                                        :dispatch-to [id]}}
-                      (when first-dispatch {:dispatch first-dispatch}))
+        :setup (do
+                 (when debug?
+                   (re-frame/console
+                     :debug "async-flow setup: " id {:ts     (system-time)
+                                                     :id     id
+                                                     :signal event-type}))
+                 (merge {:db             (set-state db #{} #{})
+                         :forward-events {:register    id
+                                          :events      (apply set/union (map :events rules))
+                                          :dispatch-to [id]}}
+                        (when first-dispatch {:dispatch first-dispatch})))
 
         ;; Here we are managing the flow.
         ;; A new event has been forwarded, so work out what should happen:
@@ -158,12 +171,24 @@
           (merge
            {:db new-db}
            (when (seq new-dispatches)
+             (when debug?
+               (re-frame/console
+                 :debug "async-flow dispatching: " id {:ts     (system-time)
+                                                       :id     id
+                                                       :signal event-type
+                                                       :events new-dispatches}))
              {:dispatch-n new-dispatches})
            (when halt?
              ;; Teardown this flow coordinator:
              ;;   1. remove this event handler
              ;;   2. remove any state stored in app-db
              ;;   3. deregister the events forwarder
+             (when debug?
+               (re-frame/console
+                 :debug "async-flow halting: " id {:ts     (system-time)
+                                                   :id     id
+                                                   :signal event-type
+                                                   :rule   (filter :halt? ready-rules)}))
              {:db                       (dissoc-in new-db db-path)
               :forward-events           {:unregister id}
               :deregister-event-handler id})))))))
