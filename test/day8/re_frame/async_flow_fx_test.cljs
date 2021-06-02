@@ -70,7 +70,8 @@
 
 
 (deftest test-setup
-  (let [flow       {:id             :some-id
+  (let [flow       {:id             :test-setup-flow
+                    :debug?         true
                     :first-dispatch [:1]
                     :rules          [
                                      {:when :seen? :events :1 :dispatch [:2]}
@@ -79,27 +80,27 @@
     (is (= (handler-fn {:db {}} [:dummy-id :setup])
            {:db             {}
             :dispatch       [:1]
-            :forward-events {:register     :some-id
+            :forward-events {:register     :test-setup-flow
                               :events      #{:1 :3}
-                              :dispatch-to [:some-id]}}))))
+                              :dispatch-to [:test-setup-flow]}}))))
 
 
 (deftest test-sans-first-dispatch
   (rf-test/run-test-async
     (let [dispatched-events  (atom #{})
           note-event-handler (fn [_ event-v] (swap! dispatched-events conj event-v) {})
-          flow               {:id    ::some-flow-id
+          flow               {:id    :test-first-dispatch-flow
                               :rules [{:when :seen? :events ::1 :dispatch [::2]}
                                       {:when :seen? :events ::2 :dispatch [::3]}
                                       {:when     :seen-all-of? :events [::1 ::2 ::3]
                                        :dispatch [::flow-complete] :halt? true}]}
           handler-fn         (core/make-flow-event-handler flow)]
       ;; Make flow handler should omit :dispatch when absent in flow
-      (is (= (handler-fn {:db {}} [::some-flow-id :setup])
+      (is (= (handler-fn {:db {}} [:test-first-dispatch-flow :setup])
              {:db             {}
-              :forward-events {:register    ::some-flow-id
+              :forward-events {:register    :test-first-dispatch-flow
                                :events      #{::1 ::2 ::3}
-                               :dispatch-to [::some-flow-id]}}))
+                               :dispatch-to [:test-first-dispatch-flow]}}))
       ;; Register flow which does not have :first-dispatch and kick off manually
       (rf/reg-event-fx ::handler-with-flow-fx (fn [_ _] {:async-flow flow :dispatch [::1]}))
       (rf/reg-event-fx ::1 note-event-handler)
@@ -157,7 +158,7 @@
 
 (deftest test-vector-handling
   (let [flow        {:first-dispatch [:start]
-                     :id             :test-id
+                     :id             :test-vector-id
                      :db-path        [:p]
                      :rules          [{:id 0 :when :seen? :events [[:1 :a]] :dispatch [:2]}
                                       {:id 2 :when :seen-any-of? :events [[:4 :b] :5] :dispatch [:6]}
@@ -168,7 +169,7 @@
     (is (= (handler-fn
              {:db {:p {:seen-events #{}
                        :rules-fired #{}}}}
-             [:test-id [:1 :a]])
+             [:test-vector-id [:1 :a]])
           {:db         {:p {:seen-events #{[:1 :a]} :rules-fired #{0}}}
            :dispatch-n [[:2]]}))
 
@@ -176,20 +177,21 @@
     (is (= (handler-fn
              {:db {:p {:seen-events #{}
                        :rules-fired #{}}}}
-             [:test-id [:1]])
+             [:test-vector-id [:1]])
           {:db         {:p {:seen-events #{[:1]} :rules-fired #{}}}}))
 
     ;; make sure :seen-any-of? works
     (is (= (handler-fn
              {:db {:p {:seen-events #{}
                        :rules-fired #{}}}}
-             [:test-id [:4 :b]])
+             [:test-vector-id [:4 :b]])
           {:db         {:p {:seen-events #{[:4 :b]} :rules-fired #{2}}}
            :dispatch-n [[:6]]}))))
 
+
 (deftest test-halt1
   (let [flow {:first-dispatch [:start]
-              :id             :test-id
+              :id             :test-halt-id
               :db-path        [:p]
               :rules [{:id 1 :when :seen? :events :3 :halt? true}
                       {:id 3 :when :seen? :events :6 :halt? true :dispatch [:7]}
@@ -199,21 +201,20 @@
     (is (= (handler-fn
              {:db {:p {:seen-events #{[:1]}
                        :rules-fired #{0}}}}
-             [:test-id [:3]])
+             [:test-halt-id [:3]])
            {:db         {}
-            :forward-events {:unregister :test-id}
-            :deregister-event-handler :test-id}))
+            :forward-events {:unregister :test-halt-id}
+            :deregister-event-handler :test-halt-id}))
 
     ;; halt event should clean up and dispatch
     (is (= (handler-fn
              {:db {:p {:seen-events #{[:1]}
                        :rules-fired #{0}}}}
-             [:test-id [:6]])
+             [:test-halt-id [:6]])
            {:db                       {}
-            :forward-events           {:unregister :test-id}
-            :deregister-event-handler :test-id
-            :dispatch-n               [[:7]]}))
-    ))
+            :forward-events           {:unregister :test-halt-id}
+            :deregister-event-handler :test-halt-id
+            :dispatch-n               [[:7]]}))))
 
 
 (deftest test-halt2
@@ -287,7 +288,7 @@
 
 (deftest test-function-handling
   (let [flow {:first-dispatch [:start]
-              :id             :test-id
+              :id             :test-fn-id
               :db-path        [:p]
               :rules [{:id 0 :when :seen? :events (fn [[e _]] (= e :1)) :dispatch [:2]}
                       {:id 1 :when :seen? :events :3 :dispatch-fn (fn [[e data]] [[:4 data]])}]}
@@ -297,7 +298,7 @@
     (is (= (handler-fn
              {:db {:p {:seen-events #{}
                        :rules-fired #{}}}}
-             [:test-id [:1]])
+             [:test-fn-id [:1]])
            {:db         {:p {:seen-events #{[:1]} :rules-fired #{0}}}
             :dispatch-n [[:2]]}))
 
@@ -305,21 +306,21 @@
     (is (= (handler-fn
              {:db {:p {:seen-events #{}
                        :rules-fired #{}}}}
-             [:test-id [:3 :some-data]])
+             [:test-fn-id [:3 :some-data]])
            {:db                        {:p {:seen-events #{[:3 :some-data]} :rules-fired #{1}}}
             :dispatch-n                [[:4 :some-data]]}))))
 
 (deftest test-notify-handling
-  (let [flow {:first-dispatch [:start]
-              :id             :test-id
-              :db-path        [:p]
-              :rules [{:id 0 :when :seen? :events [[::core/notify :test-notify]] :dispatch [:1]}]}
-        handler-fn  (core/make-flow-event-handler flow)]
-
+  ;; This flow test does not have a halt? condition so causes a warning.
+  (let [flow       {:first-dispatch [:start]
+                    :id             :test-notify-id
+                    :db-path        [:p]
+                    :rules          [{:id 0 :when :seen? :events [[::core/notify :test-notify]] :dispatch [:1]}]}
+        handler-fn (core/make-flow-event-handler flow)]
     ;; function in seen? should act as predicate
     (is (= (handler-fn
-            {:db {:p {:seen-events #{}
-                      :rules-fired #{}}}}
-            [:test-id [::core/notify :test-notify]])
+             {:db {:p {:seen-events #{}
+                       :rules-fired #{}}}}
+             [:test-notify-id [::core/notify :test-notify]])
            {:db         {:p {:seen-events #{[::core/notify :test-notify]} :rules-fired #{0}}}
             :dispatch-n [[:1]]}))))
