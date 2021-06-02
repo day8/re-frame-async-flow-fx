@@ -5,12 +5,12 @@
 
   :min-lein-version "2.9.0"
 
-  :dependencies [[org.clojure/clojure             "1.10.2" :scope "provided"]
-                 [org.clojure/clojurescript       "1.10.773" :scope "provided"
+  :dependencies [[org.clojure/clojure             "1.10.3" :scope "provided"]
+                 [org.clojure/clojurescript       "1.10.844" :scope "provided"
                   :exclusions [com.google.javascript/closure-compiler-unshaded
                                org.clojure/google-closure-library
                                org.clojure/google-closure-library-third-party]]
-                 [thheller/shadow-cljs            "2.11.18" :scope "provided"]
+                 [thheller/shadow-cljs            "2.12.4" :scope "provided"]
                  [re-frame                        "1.2.0" :scope "provided"]
                  [day8.re-frame/forward-events-fx "0.0.6"]]
 
@@ -24,7 +24,7 @@
 
   :profiles {:debug {:debug true}
              :dev   {:dependencies [[day8.re-frame/test "0.1.5"]
-                                    [binaryage/devtools "1.0.2"]]}}
+                                    [binaryage/devtools "1.0.3"]]}}
 
   :clean-targets [:target-path
                   "resources/public/js/test"
