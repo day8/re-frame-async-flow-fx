@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - update deps to latest clojure, clojurescript & shadow-cljs
+### Added
+- Debugging specific flows via an optional `:debug?` parameter. 
+  When `true`, the setup, halt and dispatches triggered by rules are logged via `re-frame.console` with the flow id
+  to help differentiate console entries with multiple flows running. 
+  Each console entry includes a map with:
+  . `:id`         - the configured or assigned flow id.
+  . `:ts`         - a high resolution time via `cljs.core/system-time`.
+  . `:signal`     - the trigger, this can be the initial :setup or the event(s)  causing a rule to be matched.
+  . `:dispatched` - the event(s) being fired by the matched rule. Only present on dispatch log.
+- Debugging can also be globally turned on/of via `(async-flow-fx/enable-debug? true)`
+- Flow rules get scanned for at least one :halt?  if none a warning is logged.
 
 ## [0.2.0] - 2021-03-04
 ### Added

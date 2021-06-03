@@ -1,8 +1,9 @@
 (ns day8.re-frame.async-flow-fx
   (:require
-    [re-frame.core :as re-frame]
-    [clojure.set :as set]
     [cljs.core :refer [system-time]]
+    [clojure.set :as set]
+    [goog.string :as gs]
+    [re-frame.core :as re-frame]
     [day8.re-frame.forward-events-fx :refer [as-callback-pred]]))
 
 (def *DEBUG? (atom false))
@@ -126,7 +127,7 @@
 
         rules       (massage-rules rules)]       ;; all of the events referred to in the rules
     (when-not (some :halt? rules)
-      (re-frame/console :warn "async-flow has no rules with :halt?" id "ts:" (system-time)))
+      (re-frame/console :warn (gs/format "async-flow [%s] %s - has no rules with :halt?" id (system-time))))
     ;; Return an event handler which will manage the flow.
     ;; This event handler will receive 2 kinds of events:
     ;;   (dispatch [:id :setup])
@@ -145,9 +146,9 @@
         :setup (do
                  (when debug?
                    (re-frame/console
-                     :debug "async-flow setup: " id {:ts     (system-time)
-                                                     :id     id
-                                                     :signal event-type}))
+                     :debug
+                     (gs/format "async-flow [%s :setup]" id)
+                     {:id id :ts (system-time) :signal event-type}))
                  (merge {:db             (set-state db #{} #{})
                          :forward-events {:register    id
                                           :events      (apply set/union (map :events rules))
@@ -173,10 +174,9 @@
            (when (seq new-dispatches)
              (when debug?
                (re-frame/console
-                 :debug "async-flow dispatching: " id {:ts     (system-time)
-                                                       :id     id
-                                                       :signal event-type
-                                                       :events new-dispatches}))
+                 :debug
+                 (gs/format "async-flow [%s :dispatching]" id)
+                 {:id id :ts (system-time) :signal event-type :dispatched new-dispatches}))
              {:dispatch-n new-dispatches})
            (when halt?
              ;; Teardown this flow coordinator:
@@ -185,10 +185,9 @@
              ;;   3. deregister the events forwarder
              (when debug?
                (re-frame/console
-                 :debug "async-flow halting: " id {:ts     (system-time)
-                                                   :id     id
-                                                   :signal event-type
-                                                   :rule   (filter :halt? ready-rules)}))
+                 :debug
+                 (gs/format "async-flow [%s :halting]" id)
+                 {:id id :ts (system-time) :signal event-type :rule (filter :halt? ready-rules)}))
              {:db                       (dissoc-in new-db db-path)
               :forward-events           {:unregister id}
               :deregister-event-handler id})))))))
