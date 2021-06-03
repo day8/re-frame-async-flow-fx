@@ -2,6 +2,7 @@
   (:require
     [cljs.core :refer [system-time]]
     [clojure.set :as set]
+    [goog.string.format]
     [goog.string :refer [format]]
     [re-frame.core :as re-frame]
     [day8.re-frame.forward-events-fx :refer [as-callback-pred]]))
