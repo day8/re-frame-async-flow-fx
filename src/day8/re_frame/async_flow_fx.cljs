@@ -2,7 +2,7 @@
   (:require
     [cljs.core :refer [system-time]]
     [clojure.set :as set]
-    [goog.string :as gs]
+    [goog.string :refer [format]]
     [re-frame.core :as re-frame]
     [day8.re-frame.forward-events-fx :refer [as-callback-pred]]))
 
@@ -127,7 +127,7 @@
 
         rules       (massage-rules rules)]       ;; all of the events referred to in the rules
     (when-not (some :halt? rules)
-      (re-frame/console :warn (gs/format "async-flow [%s] %s - has no rules with :halt?" id (system-time))))
+      (re-frame/console :warn (format "async-flow [%s] %s - has no rules with :halt?" id (system-time))))
     ;; Return an event handler which will manage the flow.
     ;; This event handler will receive 2 kinds of events:
     ;;   (dispatch [:id :setup])
@@ -147,7 +147,7 @@
                  (when debug?
                    (re-frame/console
                      :debug
-                     (gs/format "async-flow [%s :setup]" id)
+                     (format "async-flow [%s :setup]" id)
                      {:id id :ts (system-time) :signal event-type}))
                  (merge {:db             (set-state db #{} #{})
                          :forward-events {:register    id
@@ -175,7 +175,7 @@
              (when debug?
                (re-frame/console
                  :debug
-                 (gs/format "async-flow [%s :dispatching]" id)
+                 (format "async-flow [%s :dispatching]" id)
                  {:id id :ts (system-time) :signal event-type :dispatched new-dispatches}))
              {:dispatch-n new-dispatches})
            (when halt?
@@ -186,7 +186,7 @@
              (when debug?
                (re-frame/console
                  :debug
-                 (gs/format "async-flow [%s :halting]" id)
+                 (format "async-flow [%s :halting]" id)
                  {:id id :ts (system-time) :signal event-type :rule (filter :halt? ready-rules)}))
              {:db                       (dissoc-in new-db db-path)
               :forward-events           {:unregister id}
