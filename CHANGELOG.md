@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2021-06-03
 ### Changed
-- update deps to latest clojure, clojurescript & shadow-cljs
+- Update deps to including latest clojure, clojurescript & shadow-cljs
+
 ### Added
 - Debugging specific flows via an optional `:debug?` parameter. 
   When `true`, the setup, halt and dispatches triggered by rules are logged via `re-frame.console` with the flow id
