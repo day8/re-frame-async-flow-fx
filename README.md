@@ -355,11 +355,11 @@ Further Notes:
 
 The `:async-flow` data structure has the following fields:
 
-  - `:id` - optional - an identifier, typically a namespaced keyword. Each flow should have a unique id.
+  - `:id` - optional - an identifier, typically a unique namespaced keyword.
+    If not supplied, a unique value will be generated.
     Must not clash with the identifier for any event handler (because internally
     an event handler is registered using this id).
-    If absent, `:async/flow` is used.
-    If this default is used then two flows can't be running at once because they'd be using the same id.
+    If two flows have the same ID, they cannot be run at the same time.
 
   - `db-path` - optional - the path within `app-db` where the coordination logic should store state. Two pieces
     of state are stored: the set of seen events, and the set of started tasks.
