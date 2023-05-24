@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2023-05-23
+### Changed
+- :debug? now also logs :first-dispatch. Now also documented see README.md `Debugging`
+- bump provided dependencies including clojure 1.11.1, clojurescript 1.11.60 and shadow-cljs 2./23.3
+  lein-ancient replaced with com.github.liquidz/antq
+- merge PR #38 with doc fixes. Thanks @romdog
+
 ## [0.3.0] - 2021-06-03
 ### Changed
 - Update deps to including latest clojure, clojurescript & shadow-cljs
