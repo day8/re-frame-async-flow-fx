@@ -154,7 +154,13 @@
                          :forward-events {:register    id
                                           :events      (apply set/union (map :events rules))
                                           :dispatch-to [id]}}
-                        (when first-dispatch {:dispatch first-dispatch})))
+                        (when first-dispatch
+                          (when debug?
+                            (re-frame/console
+                              :debug
+                              (format "async-flow [%s :first-dispatch]" id)
+                              {:id id :ts (system-time) :dispatching first-dispatch}))
+                          {:dispatch first-dispatch})))
 
         ;; Here we are managing the flow.
         ;; A new event has been forwarded, so work out what should happen:

@@ -32,6 +32,7 @@ keyed `:async-flow`. It has a declarative, data oriented design.
 
 - [Quick Start Guide](#quick-start-guide)
 - [Testing](#testing)
+- [Debugging Flows](#debugging)
 - [Problem Definition](#problem-definition)
 - [The Solution](#the-solution)
 - [Design Philosophy](#design-philosophy)
@@ -136,6 +137,54 @@ To run the tests with Karma
 npm install karma-cli -g # install the global CLI Karma tool
 lein ci 
 ```
+
+## Debugging
+
+Beginning with version 0.3.0, there is extra console logging support to help debug complex flows.
+This can be enabled in two ways:
+1. Globally enable logging for all flows. Typically, somewhere in your top level re-frame events NS
+   ```clojure
+    (async-flow-fx/enable-debug? true)
+   ```
+2. Or on a flow by flow basis, you can specify `:debug?` property, a boolean value, in the flow map. 
+   ```clojure
+   {:debug? true}
+   ```
+
+When enabled, console logs look like following. Although specifying an `:id` in your flow is optional,
+when debugging complex flows, like when one flow triggers another flow before the parent flow completes, it is useful 
+to differentiate the log entries based on the flow `:id`. 
+Notice you see logs for `:setup`, `:first-dispatch`, `:dispatching`, the event causing
+a dispatch by the flow, the `:signal`, and when a flow is `:halting`
+
+**Devtools console example**
+
+```
+async-flow [:my-app.events/boot-app-flow :setup]
+    {:id my-app.events/boot-app-flow, :ts 822.44, :signal :setup}
+async-flow [:my-app.events/boot-app-flow :first-dispatch]
+    {:id :my-app.events/boot-app-flow :ts 823.5 :dispatching [:init-db]}
+async-flow [:my-app.events/boot-app-flow :dispatching]
+    {:id :my-app.events/boot-app-flow
+     :ts 2066.700
+     :signal [:database.connection/success-jwt]
+     :dispatched ([:day8.voz-rf.events/load-assets])}
+async-flow [:my-app.events/boot-app-flow :dispatching]
+    {:id :my-app.events/boot-flow-voz-rf
+     :ts 2625.5
+     :signal [:my-app.events/success-load-assets {:uri "/django/app-assets"}]
+     :dispatched ([:my-app.events/success-bootstrap :my-app])}
+async-flow [:my-app.events/boot-app-flow :halting]
+    {:id :my-app.events/boot-app-flow
+     :ts 2627.600000023842
+     :signal [:my-app.events/success-load-assets {:uri "/django/app-assets"}]
+     :rule ({:id 2
+            :halt? true
+            :when-seen-all-of? :events #{:my-app.events/success-load-assets}
+            :dispatch-n ([:my-app.events/success-bootstrap :my-app])})}
+...
+```
+
 
 ## Problem Definition
 
