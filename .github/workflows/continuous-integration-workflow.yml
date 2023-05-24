@@ -4,31 +4,34 @@ on: [push]
 jobs:
   test:
     name: Test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       # Source: https://github.com/day8/dockerfile-for-dev-ci-image
-      image: ghcr.io/day8/dockerfile-for-dev-ci-image/chrome-56:2 
+      image: ghcr.io/day8/dockerfile-for-dev-ci-image/chrome-56:2
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          # All of the Git history is required for day8/lein-git-inject to determine the version string.
+          fetch-depth: 0
       - name: Maven cache
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: /root/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('project.clj', '.github/workflows/**') }}
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: npm cache
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-npm-${{ hashFiles('project.clj') }}-${{ hashFiles('**/deps.cljs') }}
           restore-keys: |
             ${{ runner.os }}-npm-
       - name: shadow-cljs compiler cache
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: .shadow-cljs
           key: ${{ runner.os }}-shadow-cljs-${{ github.sha }}
@@ -36,7 +39,7 @@ jobs:
             ${{ runner.os }}-shadow-cljs-
       - run: lein ci
       - name: Slack notification
-        uses: homoluctus/slatify@v2.0.1
+        uses: lazy-actions/slatify@master
         if: failure() || cancelled()
         with:
           type: ${{ job.status }}
