@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2023-05-23
 ### Changed
 - :debug? now also logs :first-dispatch. Now also documented see README.md `Debugging`
-- bump provided dependencies including clojure 1.11.1, clojurescript 1.11.60 and shadow-cljs 2./23.3
+- bump provided dependencies including clojure 1.11.1, clojurescript 1.11.60 and shadow-cljs 2.23.3
   lein-ancient replaced with com.github.liquidz/antq
 - merge PR #38 with doc fixes. Thanks @romdog
 
